@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="t5EqZA" name="TextureSynth" projectType="audioplug" version="1.0.0"
-              bundleIdentifier="com.yourcompany.TextureSynth" includeBinaryInAppConfig="1"
+              bundleIdentifier="com.TristanPantano.TextureSynth" includeBinaryInAppConfig="1"
               buildVST="1" buildVST3="0" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" pluginName="TextureSynth" pluginDesc="TextureSynth"
-              pluginManufacturer="yourcompany" pluginManufacturerCode="Manu"
-              pluginCode="T5eq" pluginChannelConfigs="" pluginIsSynth="0" pluginWantsMidiIn="0"
-              pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0" pluginEditorRequiresKeys="0"
-              pluginAUExportPrefix="TextureSynthAU" pluginRTASCategory="" aaxIdentifier="com.yourcompany.TextureSynth"
-              pluginAAXCategory="AAX_ePlugInCategory_Dynamics" jucerVersion="4.2.4">
+              pluginManufacturer="TristanPantano" pluginManufacturerCode="Manu"
+              pluginCode="Tspt" pluginChannelConfigs="{0, 2}" pluginIsSynth="1"
+              pluginWantsMidiIn="1" pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0"
+              pluginEditorRequiresKeys="0" pluginAUExportPrefix="TextureSynthAU"
+              pluginRTASCategory="" aaxIdentifier="com.yourcompany.TextureSynth"
+              pluginAAXCategory="AAX_ePlugInCategory_Dynamics" jucerVersion="4.2.4"
+              companyName="Tristan Pantano">
   <MAINGROUP id="xfhFvq" name="TextureSynth">
     <GROUP id="{84ADEABB-588F-5449-50DD-F3CB8BE5CCB1}" name="Source">
       <FILE id="GC5LPB" name="PluginProcessor.cpp" compile="1" resource="0"
@@ -27,20 +29,20 @@
         <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="TextureSynth"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_core" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_events" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_graphics" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_data_structures" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_gui_basics" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_gui_extra" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_cryptography" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_video" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_opengl" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_basics" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../../../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_audio_plugin_client" path="../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_video" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../../../../../../../Applications/JUCE/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
   </EXPORTFORMATS>
