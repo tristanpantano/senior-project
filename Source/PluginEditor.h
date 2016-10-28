@@ -18,7 +18,7 @@
 //==============================================================================
 /**
 */
-class TextureSynthAudioProcessorEditor  : public AudioProcessorEditor
+class TextureSynthAudioProcessorEditor  : public AudioProcessorEditor, public Button::Listener
 {
 public:
     TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor&);
@@ -27,8 +27,16 @@ public:
     //==============================================================================
     void paint (Graphics&) override;
     void resized() override;
+    
+    //==============================================================================
+    void buttonClicked(Button* button) override;
+    void buttonStateChanged(Button* button) override;
+    
+    void loadButtonClicked();
 
 private:
+    TextButton fileLoadButton;
+    
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     TextureSynthAudioProcessor& processor;

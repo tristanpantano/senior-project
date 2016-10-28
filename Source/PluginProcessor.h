@@ -56,7 +56,23 @@ public:
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
 
+    //==============================================================================
+    static const int MAXPOLYPHONY;
+    
+    //==============================================================================
+    //File reading methods
+    AudioFormatManager* getFormatManager();
+    AudioFormatReader* getFileReader();
+    void setFileReader(AudioFormatReader* reader);
+    
+    //resampler methods
+    void updateResamplerAudioFile();
+    
 private:
+    //==============================================================================
+    AudioFormatManager mFormatManager;
+    ScopedPointer<AudioFormatReader> mFileReader;
+    
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextureSynthAudioProcessor)
 };

@@ -11,10 +11,12 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+const int TextureSynthAudioProcessor::MAXPOLYPHONY = 4;
 
 //==============================================================================
-TextureSynthAudioProcessor::TextureSynthAudioProcessor()
+TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr)
 {
+    mFormatManager.registerBasicFormats();
 }
 
 TextureSynthAudioProcessor::~TextureSynthAudioProcessor()
@@ -130,12 +132,35 @@ void TextureSynthAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBu
     // audio processing...
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
-        float* channelData = buffer.getWritePointer (channel);
+        //float* channelData = buffer.getWritePointer (channel);
 
         // ..do something to the data...
     }
 }
 
+//==============================================================================
+//==============================================================================
+//file reading methods
+AudioFormatManager* TextureSynthAudioProcessor::getFormatManager()
+{
+    return &mFormatManager;
+}
+void TextureSynthAudioProcessor::setFileReader(AudioFormatReader* reader)
+{
+    mFileReader = reader;
+}
+AudioFormatReader* TextureSynthAudioProcessor::getFileReader()
+{
+    return mFileReader;
+}
+
+//resampler methods
+void TextureSynthAudioProcessor::updateResamplerAudioFile()
+{
+    
+}
+
+//==============================================================================
 //==============================================================================
 bool TextureSynthAudioProcessor::hasEditor() const
 {
