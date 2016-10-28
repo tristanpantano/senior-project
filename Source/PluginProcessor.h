@@ -12,7 +12,7 @@
 #define PLUGINPROCESSOR_H_INCLUDED
 
 #include "../JuceLibraryCode/JuceHeader.h"
-
+#include "Resampler.h"
 
 //==============================================================================
 /**
@@ -72,6 +72,8 @@ private:
     //==============================================================================
     AudioFormatManager mFormatManager;
     ScopedPointer<AudioFormatReader> mFileReader;
+    
+    Resampler mResampler;
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextureSynthAudioProcessor)
