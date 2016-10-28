@@ -66,7 +66,8 @@ public:
     void setFileReader(AudioFormatReader* reader);
     
     //resampler methods
-    void updateResamplerAudioFile();
+    void initResampler();
+    Resampler* getResampler();
     
 private:
     //==============================================================================

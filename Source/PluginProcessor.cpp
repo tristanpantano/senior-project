@@ -18,15 +18,21 @@ TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr)
 {
     mFormatManager.registerBasicFormats();
     
-    for(int i = 0; i < MAXPOLYPHONY; i++)
-    {
-        SamplerVoice* newVoice = new SamplerVoice();
-        mResampler.addVoice((SynthesiserVoice*)newVoice);
-    }
+    initResampler();
 }
 
 TextureSynthAudioProcessor::~TextureSynthAudioProcessor()
 {
+}
+
+void TextureSynthAudioProcessor::initResampler()
+{
+    for(int i = 0; i < MAXPOLYPHONY; i++)
+    {
+        ResamplerVoice* newVoice = new ResamplerVoice();
+        mResampler.addVoice((SynthesiserVoice*)newVoice);
+    }
+    mResampler.setNewSoundFile(mFileReader);
 }
 
 //==============================================================================
@@ -133,7 +139,6 @@ void TextureSynthAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBu
 
 //==============================================================================
 //==============================================================================
-//file reading methods
 AudioFormatManager* TextureSynthAudioProcessor::getFormatManager()
 {
     return &mFormatManager;
@@ -147,15 +152,10 @@ AudioFormatReader* TextureSynthAudioProcessor::getFileReader()
     return mFileReader;
 }
 
-//resampler methods
-void TextureSynthAudioProcessor::updateResamplerAudioFile()
+Resampler* TextureSynthAudioProcessor::getResampler()
 {
-    mResampler.clearSounds();
-    BigInteger noteRange;
-    noteRange.setRange(0, 127, true);
-    mResampler.addSound(new SamplerSound("sample", *mFileReader, noteRange, 24, 0, 0.001, 2));
+    return &mResampler;
 }
-
 //==============================================================================
 //==============================================================================
 bool TextureSynthAudioProcessor::hasEditor() const
