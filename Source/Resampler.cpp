@@ -17,14 +17,29 @@ const int Resampler::MAXSAMPLELENGTHINSECONDS = 8;
 
 Resampler::Resampler(){}
 
+void Resampler::prepareToPlay(double sampleRate, int samplesPerBlock)
+{
+    this->setCurrentPlaybackSampleRate(sampleRate);
+    mPitchDetector.setMinMaxFrequency(20, 2000);
+    mPitchDetector.setSampleRate(sampleRate);
+}
+
 void Resampler::setNewSoundFile(AudioFormatReader* source)
 {
     if(source != nullptr)
     {
         this->clearSounds();
+        
+        int length = source->lengthInSamples;
+        detectionBuffer = new AudioSampleBuffer(1, length+4);
+        source->read(detectionBuffer, 0, length + 4, 0, true, true);
+        double detectedPitch = mPitchDetector.detectPitch(detectionBuffer->getWritePointer(0), source->lengthInSamples);
+        int MIDINoteNumber = int(log(detectedPitch/440.0)/log(2) * 12) + 69;
+        
         BigInteger noteRange;
         noteRange.setRange(0, 127, true);
-        this->addSound(new ResamplerSound("sample", *source, noteRange, 24, 0, 0.001, MAXSAMPLELENGTHINSECONDS));
+        
+        this->addSound(new ResamplerSound("sample", *source, noteRange, MIDINoteNumber, 0, 0.001, MAXSAMPLELENGTHINSECONDS));
     }
 }
 
@@ -79,7 +94,7 @@ bool ResamplerSound::appliesToChannel (int /*midiChannel*/)
 //==============================================================================
 //ResamplerVoice
 //==============================================================================
-ResamplerVoice::ResamplerVoice() : retriggerEnabled(true), startPos(0), pitchRatio(0.0), sourceSamplePosition(0.0){}
+ResamplerVoice::ResamplerVoice() : retriggerEnabled(true), loopingEnabled(false), startPos(0), pitchRatio(0.0), sourceSamplePosition(0.0){}
 
 bool ResamplerVoice::canPlaySound(SynthesiserSound* sound)
 {
@@ -148,7 +163,15 @@ void ResamplerVoice::renderNextBlock(AudioSampleBuffer& outputBuffer, int startS
             
             if (sourceSamplePosition > playingSound->length)
             {
-                sourceSamplePosition = startPos;
+                if(loopingEnabled)
+                {
+                    sourceSamplePosition = startPos;
+                }
+                else
+                {
+                    stopNote(0.0f, false);
+                    break;
+                }
             }
         }
     }

@@ -12,6 +12,7 @@
 #define RESAMPLER_H_INCLUDED
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "dRowAudio.h"
 
 //==============================================================================
 //Resampler: a synthesiser that can play back a single audio file across its voices
@@ -23,7 +24,12 @@ public:
     
     static const int MAXSAMPLELENGTHINSECONDS;
     
+    void prepareToPlay(double sampleRate, int samplesPerBlock);
     void setNewSoundFile(AudioFormatReader* source);
+    
+private:
+    drow::PitchDetector mPitchDetector;
+    ScopedPointer<AudioSampleBuffer> detectionBuffer;
 };
 
 //==============================================================================
@@ -49,7 +55,7 @@ public:
     
 private:
     //==============================================================================
-    bool retriggerEnabled;
+    bool retriggerEnabled, loopingEnabled;
     
     int startPos;
     
