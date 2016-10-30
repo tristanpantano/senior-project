@@ -12,6 +12,7 @@
 #include "PluginEditor.h"
 
 
+
 //==============================================================================
 TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor& p)
     : AudioProcessorEditor (&p), processor (p)

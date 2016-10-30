@@ -22,8 +22,6 @@ class Resampler : public Synthesiser
 public:
     Resampler();
     
-    static const int MAXSAMPLELENGTHINSECONDS;
-    
     void prepareToPlay(double sampleRate, int samplesPerBlock);
     void setNewSoundFile(AudioFormatReader* source);
     
@@ -33,49 +31,15 @@ private:
 };
 
 //==============================================================================
-//ResamplerVoice: playback logic for an audio file loaded into a ResamplerSound
-//==============================================================================
-class ResamplerVoice : public SynthesiserVoice
-{
-public:
-    //==============================================================================
-    ResamplerVoice();
-    
-    //==============================================================================
-    bool canPlaySound (SynthesiserSound*) override;
-    
-    void startNote (int midiNoteNumber, float velocity, SynthesiserSound* s, int pitchWheel) override;
-    void stopNote (float velocity, bool allowTailOff) override;
-    
-    void pitchWheelMoved (int newValue) override;
-    void controllerMoved (int controllerNumber, int newValue) override;
-    
-    void renderNextBlock (AudioSampleBuffer& outputBuffer, int startSample, int numSamples) override;
-    
-    
-private:
-    //==============================================================================
-    bool retriggerEnabled, loopingEnabled;
-    
-    int startPos;
-    
-    double pitchRatio;
-    double sourceSamplePosition;
-};
-
-//==============================================================================
 //ResamplerSound:
 //==============================================================================
 class ResamplerSound : public SynthesiserSound
 {
 public:
     ResamplerSound (const String& name,
-                  AudioFormatReader& source,
+                  AudioFormatReader* source,
                   const BigInteger& midiNotes,
-                  int midiNoteForNormalPitch,
-                  double attackTimeSecs,
-                  double releaseTimeSecs,
-                  double maxSampleLengthSeconds);
+                  int midiNoteForNormalPitch);
 
     /** Destructor. */
     ~ResamplerSound();
@@ -83,12 +47,8 @@ public:
     //==============================================================================
     /** Returns the sample's name */
     const String& getName() const noexcept                  { return name; }
-
-    /** Returns the audio sample data.
-     This could return nullptr if there was a problem loading the data.
-     */
-    AudioSampleBuffer* getAudioData() const noexcept        { return data; }
-
+    
+    AudioFormatReaderSource* getFileData() { return data; }
 
     //==============================================================================
     bool appliesToNote (int midiNoteNumber) override;
@@ -100,13 +60,56 @@ private:
     friend class ResamplerVoice;
 
     String name;
-    ScopedPointer<AudioSampleBuffer> data;
+    ScopedPointer<AudioFormatReaderSource> data;
     double sourceSampleRate;
     BigInteger midiNotes;
-    int length, attackSamples, releaseSamples;
+    int length;
     int midiRootNote;
 
 JUCE_LEAK_DETECTOR (ResamplerSound)
+};
+
+//==============================================================================
+//ResamplerVoice: playback logic for an audio file loaded into a ResamplerSound
+//==============================================================================
+class ResamplerVoice : public SynthesiserVoice
+{
+public:
+    //==============================================================================
+    ResamplerVoice();
+    //~ResamplerVoice();
+    
+    //==============================================================================
+    bool canPlaySound (SynthesiserSound*) override;
+    
+    void startNote (int midiNoteNumber, float velocity, SynthesiserSound* s, int pitchWheel) override;
+    void stopNote (float velocity, bool allowTailOff) override;
+    
+    void pitchWheelMoved (int newValue) override;
+    void controllerMoved (int controllerNumber, int newValue) override;
+    
+    void prepareToPlay(double sampleRate, int samplesPerBlock);
+    void renderNextBlock (AudioSampleBuffer& outputBuffer, int startSample, int numSamples) override;
+    
+    void createSoundtouchSource(AudioFormatReaderSource* fileData);
+    void clearSoundtouchSource();
+    void initSoundtouchSource();
+    
+    static const int NUMSAMPLESFORSOUNDTOUCH;
+    
+private:
+    //==============================================================================
+    AudioSampleBuffer soundtouchBuffer;
+    AudioSourceChannelInfo soundtouchAudioInfo;
+    ScopedPointer<drow::SoundTouchAudioSource> soundtouchSource;
+    int indexInSTBuffer;
+    
+    bool retriggerEnabled, loopingEnabled;
+    
+    int startPos;
+    
+    double pitchRatio, srRatio;
+    double sourceSamplePosition;
 };
 
 

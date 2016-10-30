@@ -11,7 +11,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-const int TextureSynthAudioProcessor::MAXPOLYPHONY = 8;
+const int TextureSynthAudioProcessor::MAXPOLYPHONY = 4;
 
 //==============================================================================
 TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr)
@@ -91,7 +91,7 @@ void TextureSynthAudioProcessor::changeProgramName (int index, const String& new
 //==============================================================================
 void TextureSynthAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    mResampler.setCurrentPlaybackSampleRate(sampleRate);
+    mResampler.prepareToPlay(sampleRate, samplesPerBlock);
 }
 
 void TextureSynthAudioProcessor::releaseResources()
@@ -127,13 +127,10 @@ bool TextureSynthAudioProcessor::setPreferredBusArrangement (bool isInput, int b
 
 void TextureSynthAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
-    const int totalNumInputChannels  = getTotalNumInputChannels();
-    const int totalNumOutputChannels = getTotalNumOutputChannels();
     const int numSamples = buffer.getNumSamples();
-
-    for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
-
+    
+    buffer.clear();
+    
     mResampler.renderNextBlock(buffer, midiMessages, 0, numSamples);
 }
 

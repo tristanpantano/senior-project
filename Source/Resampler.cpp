@@ -10,36 +10,59 @@
 
 #include "Resampler.h"
 
+const int ResamplerVoice::NUMSAMPLESFORSOUNDTOUCH = 2048;
+
 //==============================================================================
 //Resampler
 //==============================================================================
-const int Resampler::MAXSAMPLELENGTHINSECONDS = 8;
 
 Resampler::Resampler(){}
 
 void Resampler::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
     this->setCurrentPlaybackSampleRate(sampleRate);
+    
     mPitchDetector.setMinMaxFrequency(20, 2000);
     mPitchDetector.setSampleRate(sampleRate);
+    
+    for(int i=0; i < this->getNumVoices(); i++)
+    {
+        ResamplerVoice* tempVoicePtr = (ResamplerVoice*)this->getVoice(i);
+        tempVoicePtr->prepareToPlay(sampleRate, samplesPerBlock);
+    }
 }
 
 void Resampler::setNewSoundFile(AudioFormatReader* source)
 {
     if(source != nullptr)
     {
+        //remove prior sound
+        for(int i=0; i < this->getNumVoices(); i++)
+        {
+            ResamplerVoice* tempVoicePtr = (ResamplerVoice*)this->getVoice(i);
+            tempVoicePtr->clearSoundtouchSource();
+        }
         this->clearSounds();
         
+        //calculate pitch of sample
         int length = source->lengthInSamples;
         detectionBuffer = new AudioSampleBuffer(1, length+4);
         source->read(detectionBuffer, 0, length + 4, 0, true, true);
         double detectedPitch = mPitchDetector.detectPitch(detectionBuffer->getWritePointer(0), source->lengthInSamples);
         int MIDINoteNumber = int(log(detectedPitch/440.0)/log(2) * 12) + 69;
         
+        //create range of MIDI notes sound will trigger on
         BigInteger noteRange;
         noteRange.setRange(0, 127, true);
         
-        this->addSound(new ResamplerSound("sample", *source, noteRange, MIDINoteNumber, 0, 0.001, MAXSAMPLELENGTHINSECONDS));
+        //create new sound
+        ResamplerSound* tempSoundPtr = new ResamplerSound("sample", source, noteRange, MIDINoteNumber);
+        this->addSound(tempSoundPtr);
+        for(int i=0; i < this->getNumVoices(); i++)
+        {
+            ResamplerVoice* tempVoicePtr = (ResamplerVoice*)this->getVoice(i);
+            tempVoicePtr->createSoundtouchSource(tempSoundPtr->getFileData());
+        }
     }
 }
 
@@ -47,35 +70,25 @@ void Resampler::setNewSoundFile(AudioFormatReader* source)
 //ResamplerSound
 //==============================================================================
 ResamplerSound::ResamplerSound (const String& soundName,
-                            AudioFormatReader& source,
+                            AudioFormatReader* source,
                             const BigInteger& notes,
-                            const int midiNoteForNormalPitch,
-                            const double attackTimeSecs,
-                            const double releaseTimeSecs,
-                            const double maxSampleLengthSeconds)
+                            const int midiNoteForNormalPitch)
 : name (soundName),
 midiNotes (notes),
 midiRootNote (midiNoteForNormalPitch)
 {
-    sourceSampleRate = source.sampleRate;
+    sourceSampleRate = source->sampleRate;
     
-    if (sourceSampleRate <= 0 || source.lengthInSamples <= 0)
+    if (sourceSampleRate <= 0 || source->lengthInSamples <= 0)
     {
         length = 0;
-        attackSamples = 0;
-        releaseSamples = 0;
+        source = nullptr;
+        jassert("Loaded file must have samples/sample rate!");
     }
     else
     {
-        length = jmin ((int) source.lengthInSamples,
-                       (int) (maxSampleLengthSeconds * sourceSampleRate));
-        
-        data = new AudioSampleBuffer (jmin (2, (int) source.numChannels), length + 4);
-        
-        source.read (data, 0, length + 4, 0, true, true);
-        
-        attackSamples = roundToInt (attackTimeSecs * sourceSampleRate);
-        releaseSamples = roundToInt (releaseTimeSecs * sourceSampleRate);
+        length = (int)source->lengthInSamples;
+        data = new AudioFormatReaderSource(source, false);
     }
 }
 
@@ -94,7 +107,7 @@ bool ResamplerSound::appliesToChannel (int /*midiChannel*/)
 //==============================================================================
 //ResamplerVoice
 //==============================================================================
-ResamplerVoice::ResamplerVoice() : retriggerEnabled(true), loopingEnabled(false), startPos(0), pitchRatio(0.0), sourceSamplePosition(0.0){}
+ResamplerVoice::ResamplerVoice() : soundtouchBuffer(2, NUMSAMPLESFORSOUNDTOUCH), soundtouchAudioInfo(soundtouchBuffer), soundtouchSource(nullptr), indexInSTBuffer(0), retriggerEnabled(true), loopingEnabled(true), startPos(0), pitchRatio(0.0), srRatio(0.0), sourceSamplePosition(0.0){}
 
 bool ResamplerVoice::canPlaySound(SynthesiserSound* sound)
 {
@@ -105,12 +118,22 @@ void ResamplerVoice::startNote(int midiNoteNumber, float velocity, SynthesiserSo
 {
     if (const ResamplerSound* const sound = dynamic_cast<const ResamplerSound*> (s))
     {
-        if(retriggerEnabled)
+        if(soundtouchSource!= nullptr)
         {
-            sourceSamplePosition =  startPos;
+            if(retriggerEnabled)
+            {
+                soundtouchSource->setNextReadPosition(0);
+            }
+            
+            srRatio = sound->sourceSampleRate/getSampleRate();
+            pitchRatio = pow(2.0, (midiNoteNumber - sound->midiRootNote) / 12.0);
+            
+            //set soundtouch playback settings
+            drow::SoundTouchProcessor::PlaybackSettings settings = drow::SoundTouchProcessor::PlaybackSettings(srRatio, 1.0, pitchRatio); //sr ratio, tempo ratio, pitch ratio
+            soundtouchSource->setPlaybackSettings(settings);
+            
+            soundtouchSource->getNextAudioBlock(soundtouchAudioInfo); //grab first block
         }
-        
-        pitchRatio = pow (2.0, (midiNoteNumber - sound->midiRootNote) / 12.0)* sound->sourceSampleRate / getSampleRate();
     }
     else
     {
@@ -134,45 +157,47 @@ void ResamplerVoice::stopNote(float /*velocity*/, bool allowTailOff)
 void ResamplerVoice::pitchWheelMoved (int newValue){}
 void ResamplerVoice::controllerMoved (int controllerNumber, int newValue) {}
 
+void ResamplerVoice::prepareToPlay(double sampleRate, int samplesPerBlock)
+{
+    initSoundtouchSource();
+}
 void ResamplerVoice::renderNextBlock(AudioSampleBuffer& outputBuffer, int startSample, int numSamples)
 {
     if (const ResamplerSound* const playingSound = static_cast<ResamplerSound*> (getCurrentlyPlayingSound().get()))
     {
-        const float* const inL = playingSound->data->getReadPointer (0);
-        const float* const inR = playingSound->data->getNumChannels() > 1
-        ? playingSound->data->getReadPointer(1) : playingSound->data->getReadPointer(0);
-        //^use right channel if it exists (stereo input), otherwise use the left channel (mono input)
-        
-        float* outL = outputBuffer.getWritePointer (0, startSample);
-        float* outR = outputBuffer.getWritePointer (1, startSample);
-        
-        for(int i = startSample; i < startSample+numSamples; i++)
+        //copy soundtouch buffer to output buffer
+        const float* stLeft = soundtouchBuffer.getReadPointer(0);
+        const float* stRight = soundtouchBuffer.getReadPointer(1);
+        float* outLeft = outputBuffer.getWritePointer(0);
+        float* outRight = outputBuffer.getWritePointer(1);
+        for(int i = 0; i < numSamples; i++)
         {
-            const int pos = (int) sourceSamplePosition;
-            const float alpha = (float) (sourceSamplePosition - pos);
-            const float invAlpha = 1.0f - alpha;
+            outLeft[i+startSample] += stLeft[indexInSTBuffer];
+            outRight[i+startSample] += stRight[indexInSTBuffer];
             
-            // just using a very simple linear interpolation here..
-            float l = (inL [pos] * invAlpha + inL [pos + 1] * alpha);
-            float r = (inR != nullptr) ? (inR [pos] * invAlpha + inR [pos + 1] * alpha) : l;
-            
-            *outL++ += l;
-            *outR++ += r;
-            
-            sourceSamplePosition += pitchRatio;
-            
-            if (sourceSamplePosition > playingSound->length)
+            indexInSTBuffer++;
+            if(indexInSTBuffer >= soundtouchBuffer.getNumSamples())
             {
-                if(loopingEnabled)
-                {
-                    sourceSamplePosition = startPos;
-                }
-                else
-                {
-                    stopNote(0.0f, false);
-                    break;
-                }
+                indexInSTBuffer = 0;
+                soundtouchSource->getNextAudioBlock(soundtouchAudioInfo);
             }
         }
+    }
+}
+
+void ResamplerVoice::createSoundtouchSource(AudioFormatReaderSource* fileData)
+{
+    soundtouchSource = new drow::SoundTouchAudioSource((PositionableAudioSource*)fileData);
+    initSoundtouchSource();
+}
+void ResamplerVoice::clearSoundtouchSource()
+{
+    soundtouchSource = nullptr;
+}
+void ResamplerVoice::initSoundtouchSource()
+{
+    if(soundtouchSource!=nullptr)
+    {
+        soundtouchSource->prepareToPlay(0, getSampleRate());
     }
 }
