@@ -66,8 +66,7 @@ void TextureSynthAudioProcessorEditor::loadButtonClicked()
     
     if(chooser.browseForFileToOpen())
     {
-        File file (chooser.getResult());
-        processor.setFileReader(processor.getFormatManager()->createReaderFor(file));
-        processor.getResampler()->setNewSoundFile(processor.getFileReader());
+        File file(chooser.getResult());
+        processor.setFileReader(&file);
     }
 }

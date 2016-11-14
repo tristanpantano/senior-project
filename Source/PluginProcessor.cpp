@@ -14,25 +14,25 @@
 const int TextureSynthAudioProcessor::MAXPOLYPHONY = 4;
 
 //==============================================================================
-TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr)
+TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr), fileAddress("")
 {
     mFormatManager.registerBasicFormats();
     
-    initResampler();
+    initSynth(); //do after reading in file stored in state
+}
+
+void TextureSynthAudioProcessor::initSynth()
+{
+    for(int i = 0; i < MAXPOLYPHONY; i++)
+    {
+        GrainSynthVoice* newVoice = new GrainSynthVoice();
+        synth.addVoice((SynthesiserVoice*)newVoice);
+    }
+    synth.createNewSoundFromFile(mFileReader);
 }
 
 TextureSynthAudioProcessor::~TextureSynthAudioProcessor()
 {
-}
-
-void TextureSynthAudioProcessor::initResampler()
-{
-    for(int i = 0; i < MAXPOLYPHONY; i++)
-    {
-        ResamplerVoice* newVoice = new ResamplerVoice();
-        mResampler.addVoice((SynthesiserVoice*)newVoice);
-    }
-    mResampler.setNewSoundFile(mFileReader);
 }
 
 //==============================================================================
@@ -91,7 +91,7 @@ void TextureSynthAudioProcessor::changeProgramName (int index, const String& new
 //==============================================================================
 void TextureSynthAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    mResampler.prepareToPlay(sampleRate, samplesPerBlock);
+    synth.prepareToPlay(sampleRate, samplesPerBlock);
 }
 
 void TextureSynthAudioProcessor::releaseResources()
@@ -131,28 +131,19 @@ void TextureSynthAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBu
     
     buffer.clear();
     
-    mResampler.renderNextBlock(buffer, midiMessages, 0, numSamples);
+    synth.renderNextBlock(buffer, midiMessages, 0, numSamples);
 }
 
 //==============================================================================
 //==============================================================================
-AudioFormatManager* TextureSynthAudioProcessor::getFormatManager()
+void TextureSynthAudioProcessor::setFileReader(File* file)
 {
-    return &mFormatManager;
-}
-void TextureSynthAudioProcessor::setFileReader(AudioFormatReader* reader)
-{
-    mFileReader = reader;
-}
-AudioFormatReader* TextureSynthAudioProcessor::getFileReader()
-{
-    return mFileReader;
+    mFileReader = mFormatManager.createReaderFor(*file);
+    fileAddress = file->getFullPathName();
+    
+    synth.createNewSoundFromFile(mFileReader);
 }
 
-Resampler* TextureSynthAudioProcessor::getResampler()
-{
-    return &mResampler;
-}
 //==============================================================================
 //==============================================================================
 bool TextureSynthAudioProcessor::hasEditor() const
