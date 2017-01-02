@@ -12,8 +12,9 @@
 #define GRANULATOR_H_INCLUDED
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include <algorithm>
 
-const int MAXGRAINPOLYPHONY = 16;
+const int MAXGRAINPOLYPHONY = 128;
 
 class GrainEnvelope
 {
@@ -21,8 +22,8 @@ public:
     GrainEnvelope();
     
     void initialize(double fadeInSec, double sampleRate);
-    
     double synthesize(int indexInGrain, int grainSampleLength);
+    
 private:
     bool initialized;
     int numFadeSamples;
@@ -43,6 +44,7 @@ public:
     void synthesize(AudioSampleBuffer& outputBuffer, AudioSampleBuffer* sourceBuffer, int startSample);
     
     void setEnvelopePtr(GrainEnvelope* env){ envelope = env; }
+    void setActive(bool isActive){ active = isActive; }
     
 private:
     bool active;
@@ -54,35 +56,37 @@ private:
 //==============================================================================
 //Granulator
 //==============================================================================
-class Granulator
+class Granulator : public AudioProcessorValueTreeState::Listener
 {
 public:
     Granulator();
     void prepareToPlay(double sr, int samplesPerBlock);
     
+    //Listener
+    void parameterChanged(const String &parameterID, float newValue) override;
+    
     //SequenceStrategy
-    void setTargetPitch(double pitchInHz){ targetPitchInHz = pitchInHz; }
+    void setTargetPitch(double pitchInHz);
     int nextDurationInSamples();
     int nextInteronsetInSamples();
     void advanceReadIndex(int samplesElapsed);
     void restartReadIndex();
+    double getResamplingRatio();
     
     //Scheduler
-    void retrigger(int startPos);
+    void retrigger();
     void renderNextBlock(AudioSampleBuffer& outputBuffer, int startSample, int numSamples);
     int initFreeGrain(AudioSampleBuffer& outputBuffer); //returns -1 if no free grains
     
-    //Envelope
-    
     //Source
-    void setSource(AudioSampleBuffer* s){ source = s; }
+    void setSource(AudioSampleBuffer* s, double sr, double pitch);
     
 private:
-    double sampleRate;
+    double sampleRate; //for output buffer
     
     //SequenceStrategy
-    double timeSkew;
     double targetPitchInHz;
+    double grainSizeInSec;
     
     //Scheduler
     int samplesTilNextGrain;
@@ -96,6 +100,8 @@ private:
     
     //Source
     AudioSampleBuffer* source;
+    double sourceSampleRate;
+    double sourcePitchInHz;
 };
 
 

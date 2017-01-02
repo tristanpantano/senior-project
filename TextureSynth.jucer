@@ -4,8 +4,8 @@
               bundleIdentifier="com.TristanPantano.TextureSynth" includeBinaryInAppConfig="1"
               buildVST="1" buildVST3="0" buildAU="1" buildAUv3="0" buildRTAS="0"
               buildAAX="0" pluginName="TextureSynth" pluginDesc="TextureSynth"
-              pluginManufacturer="TristanPantano" pluginManufacturerCode="Manu"
-              pluginCode="Tspt" pluginChannelConfigs="{0, 2}" pluginIsSynth="1"
+              pluginManufacturer="Tristan Pantano" pluginManufacturerCode="TspS"
+              pluginCode="TspT" pluginChannelConfigs="{0, 2}" pluginIsSynth="1"
               pluginWantsMidiIn="1" pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0"
               pluginEditorRequiresKeys="0" pluginAUExportPrefix="TextureSynthAU"
               pluginRTASCategory="" aaxIdentifier="com.yourcompany.TextureSynth"
@@ -13,6 +13,13 @@
               companyName="Tristan Pantano">
   <MAINGROUP id="xfhFvq" name="TextureSynth">
     <GROUP id="{84ADEABB-588F-5449-50DD-F3CB8BE5CCB1}" name="Source">
+      <FILE id="LyLhDc" name="dRowAudio.cpp" compile="1" resource="0" file="../../../../../../../Macintosh HD/Applications/JUCE/modules/drowaudio/dRowAudio.cpp"/>
+      <FILE id="yc8HtN" name="dRowAudio.h" compile="0" resource="0" file="../../../../../../../Macintosh HD/Applications/JUCE/modules/drowaudio/dRowAudio.h"/>
+      <FILE id="tHjzdy" name="dRowAudio.mm" compile="1" resource="0" file="../../../../../../../Macintosh HD/Applications/JUCE/modules/drowaudio/dRowAudio.mm"/>
+      <FILE id="pL0W3e" name="Granulator.cpp" compile="1" resource="0" file="Source/Granulator.cpp"/>
+      <FILE id="c135YF" name="Granulator.h" compile="0" resource="0" file="Source/Granulator.h"/>
+      <FILE id="KHhjOH" name="GrainSynth.cpp" compile="1" resource="0" file="Source/GrainSynth.cpp"/>
+      <FILE id="nYZavq" name="GrainSynth.h" compile="0" resource="0" file="Source/GrainSynth.h"/>
       <FILE id="GC5LPB" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="qVfzT1" name="PluginProcessor.h" compile="0" resource="0"
@@ -43,6 +50,7 @@
         <MODULEPATH id="juce_audio_formats" path="../../../../../../../../Applications/JUCE/modules"/>
         <MODULEPATH id="juce_audio_processors" path="../../../../../../../../Applications/JUCE/modules"/>
         <MODULEPATH id="juce_audio_plugin_client" path="../../../../../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../../../../../../../Applications/JUCE/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
   </EXPORTFORMATS>
@@ -52,6 +60,7 @@
     <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0"/>
     <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0"/>
     <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0"/>
     <MODULE id="juce_core" showAllCode="1" useLocalCopy="0"/>
     <MODULE id="juce_cryptography" showAllCode="1" useLocalCopy="0"/>
     <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0"/>
@@ -63,4 +72,7 @@
     <MODULE id="juce_video" showAllCode="1" useLocalCopy="0"/>
   </MODULES>
   <JUCEOPTIONS JUCE_QUICKTIME="disabled"/>
+  <LIVE_SETTINGS>
+    <OSX/>
+  </LIVE_SETTINGS>
 </JUCERPROJECT>

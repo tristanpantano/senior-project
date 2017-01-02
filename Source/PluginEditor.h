@@ -18,7 +18,7 @@
 //==============================================================================
 /**
 */
-class TextureSynthAudioProcessorEditor  : public AudioProcessorEditor, public Button::Listener
+class TextureSynthAudioProcessorEditor  : public AudioProcessorEditor, public Button::Listener, public ChangeListener
 {
 public:
     TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor&);
@@ -29,13 +29,24 @@ public:
     void resized() override;
     
     //==============================================================================
+    //Button Listener
     void buttonClicked(Button* button) override;
     void buttonStateChanged(Button* button) override;
     
-    void loadButtonClicked();
+    //Change Listener
+    void changeListenerCallback(ChangeBroadcaster* source) override;
 
 private:
+    //Buttons
     TextButton fileLoadButton;
+    void loadButtonClicked();
+    
+    //Knobs & Sliders
+    void initKnob(Slider& knob);
+    
+    //Thumbnail
+    void paintThumbnail(Graphics& g, const Rectangle<int> thumbnailBounds);
+    
     
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.

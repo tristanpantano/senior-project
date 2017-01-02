@@ -63,6 +63,7 @@ GrainSynthSound::GrainSynthSound(AudioFormatReader* source, const BigInteger& no
     else
     {
         fileSource = new AudioFormatReaderSource(source, false);
+        sourceSampleRate = source->sampleRate;
         bufferedFile = new AudioSampleBuffer(2, source->lengthInSamples);
         source->read(bufferedFile, 0, source->lengthInSamples, 0, true, true);
     }
@@ -92,8 +93,8 @@ void GrainSynthVoice::startNote(int midiNoteNumber, float velocity, SynthesiserS
 {
     if(const GrainSynthSound* const sound = dynamic_cast<const GrainSynthSound*> (s))
     {
-        granulator.retrigger(0);
-        granulator.setSource(sound->bufferedFile);
+        granulator.retrigger();
+        granulator.setSource(sound->bufferedFile, sound->sourceSampleRate, sound->defaultPitchInHz);
         granulator.setTargetPitch(MidiMessage::getMidiNoteInHertz(midiNoteNumber));
     }
     else

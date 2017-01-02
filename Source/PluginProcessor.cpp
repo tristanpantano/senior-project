@@ -13,14 +13,22 @@
 
 const int TextureSynthAudioProcessor::MAXPOLYPHONY = 4;
 
+String TextureSynthAudioProcessor::grainParamArray[] = {"gsize", "gtimescale"};//, "gphasedecorrelate", "gdetune", "gcoarse", "gfine", "gstereowidth"};
+const int TextureSynthAudioProcessor::NUMGRANULATORPARAMS = 2;
+
 //==============================================================================
-TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr), fileAddress("")
+TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr), fileAddress(""), thumbnailCache(5), thumbnail(512, mFormatManager, thumbnailCache)
 {
     mFormatManager.registerBasicFormats();
     
-    initSynth(); //do after reading in file stored in state
-}
+    mUndoManager = new UndoManager();
+    mState = new AudioProcessorValueTreeState (*this, mUndoManager);
+    
+    initSynth();
+    initParams();
 
+    mState->state = ValueTree("TextureSynthParameters");
+}
 void TextureSynthAudioProcessor::initSynth()
 {
     for(int i = 0; i < MAXPOLYPHONY; i++)
@@ -28,11 +36,36 @@ void TextureSynthAudioProcessor::initSynth()
         GrainSynthVoice* newVoice = new GrainSynthVoice();
         synth.addVoice((SynthesiserVoice*)newVoice);
     }
-    synth.createNewSoundFromFile(mFileReader);
 }
-
+void TextureSynthAudioProcessor::initParams()
+{
+    //Granulator Parameters
+    mState->createAndAddParameter(grainParamArray[0], "Grain Size", " ms", NormalisableRange<float>(10, 80, 1), 40, nullptr, nullptr);
+    mState->createAndAddParameter(grainParamArray[1], "Time Scale", " %", NormalisableRange<float>(1, 50, 0.5), 12.5, nullptr, nullptr);
+    for(int j = 0; j < synth.getNumVoices(); j++) //Make each synth's voice's granulator a listener
+    {
+        GrainSynthVoice* tempVoice = (GrainSynthVoice*)synth.getVoice(j);
+        Granulator* granulator = tempVoice->getGranulator();
+        for(int i = 0; i < NUMGRANULATORPARAMS; i++)
+        {
+            mState->addParameterListener(grainParamArray[i], granulator);
+            AudioProcessorParameter* tempForInit = mState->getParameter(grainParamArray[i]);
+            tempForInit->setValueNotifyingHost(tempForInit->getValue());
+        }
+    }
+}
 TextureSynthAudioProcessor::~TextureSynthAudioProcessor()
 {
+    //Detach synth's voice's granulators from being processor state listeners
+    for(int j = 0; j < synth.getNumVoices(); j++)
+    {
+        GrainSynthVoice* tempVoice = (GrainSynthVoice*) synth.getVoice(j);
+        Granulator* granulator = tempVoice->getGranulator();
+        for(int i = 0; i < NUMGRANULATORPARAMS; i++)
+        {
+            mState->removeParameterListener(grainParamArray[i], granulator);
+        }
+    }
 }
 
 //==============================================================================
@@ -125,7 +158,7 @@ bool TextureSynthAudioProcessor::setPreferredBusArrangement (bool isInput, int b
 }
 #endif
 
-void TextureSynthAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
+void TextureSynthAudioProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
     const int numSamples = buffer.getNumSamples();
     
@@ -136,12 +169,28 @@ void TextureSynthAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBu
 
 //==============================================================================
 //==============================================================================
-void TextureSynthAudioProcessor::setFileReader(File* file)
+void TextureSynthAudioProcessor::setFileReader(File& file)
 {
-    mFileReader = mFormatManager.createReaderFor(*file);
-    fileAddress = file->getFullPathName();
-    
+    mFileReader = mFormatManager.createReaderFor(file);
+    fileAddress = file.getFullPathName();
     synth.createNewSoundFromFile(mFileReader);
+    thumbnail.setSource(new FileInputSource(file));
+}
+void TextureSynthAudioProcessor::loadFileFromAddress(const String &absPath)
+{
+    File file(absPath);
+    if(file.existsAsFile() && file.hasFileExtension("wav"))
+    {
+        setFileReader(file);
+    }
+    else if(!file.existsAsFile())
+    {
+        //couldn't load file from path
+    }
+    else
+    {
+        //file not a .wav
+    }
 }
 
 //==============================================================================
@@ -159,15 +208,51 @@ AudioProcessorEditor* TextureSynthAudioProcessor::createEditor()
 //==============================================================================
 void TextureSynthAudioProcessor::getStateInformation (MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    copyXmlToBinary(createXmlState(), destData);
 }
 
 void TextureSynthAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    ScopedPointer<XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+    loadXmlState(xmlState);
+}
+XmlElement TextureSynthAudioProcessor::createXmlState()
+{
+    XmlElement xmlState("TextureSynthXML");
+    
+    xmlState.addChildElement(mState->state.createXml());
+    
+    XmlElement* xmlFileName = new XmlElement("TextureSynthLoadedFile");
+    xmlFileName->setAttribute("path", fileAddress);
+    xmlState.addChildElement(xmlFileName);
+    
+    return xmlState;
+}
+void TextureSynthAudioProcessor::loadXmlState(XmlElement* xmlState)
+{
+     if(xmlState != nullptr && xmlState->getTagName() == "TextureSynthXML")
+     {
+         forEachXmlChildElement (*xmlState, e)
+         {
+             if(e->hasTagName(mState->state.getType()))
+             {
+                 const XmlElement xmlParamState(*e);
+                 mState->state = ValueTree::fromXml(xmlParamState);
+             }
+             else if(e->hasTagName("TextureSynthLoadedFile"))
+             {
+                 loadFileFromAddress(e->getStringAttribute("path"));
+             }
+         }
+     }
+    else
+    {
+        //improper xml state
+    }
+}
+AudioProcessorValueTreeState& TextureSynthAudioProcessor::getValueTreeState()
+{
+    return *mState;
 }
 
 //==============================================================================

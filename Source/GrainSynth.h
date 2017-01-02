@@ -47,6 +47,7 @@ private:
     
     BigInteger midiNotes;
     double defaultPitchInHz;
+    double sourceSampleRate;
     
     ScopedPointer<AudioSampleBuffer> bufferedFile;
     ScopedPointer<AudioFormatReaderSource> fileSource;
@@ -59,6 +60,8 @@ class GrainSynthVoice : public SynthesiserVoice
 {
 public:
     GrainSynthVoice();
+    
+    Granulator* getGranulator() { return &granulator; }
     
     bool canPlaySound (SynthesiserSound* s) override;
     

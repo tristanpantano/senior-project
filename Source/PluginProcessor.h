@@ -55,23 +55,45 @@ public:
     //==============================================================================
     void getStateInformation (MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
-
+    AudioProcessorValueTreeState& getValueTreeState();
+    
     //==============================================================================
     static const int MAXPOLYPHONY;
     
+    static String grainParamArray[];
+    static const int NUMGRANULATORPARAMS;
+    
     //==============================================================================
     //File reading methods
-    void setFileReader(File* file);
+    void setFileReader(File& file);
+    void loadFileFromAddress(const String &absPath);
+    
+    AudioThumbnail* getThumbnail(){ return & thumbnail; }
     
 private:
     //==============================================================================
+    //File Reading
     AudioFormatManager mFormatManager;
     ScopedPointer<AudioFormatReader> mFileReader;
     String fileAddress;
     
+    //Waveform thumbnail
+    AudioThumbnailCache thumbnailCache;
+    AudioThumbnail thumbnail;
+    
+    //State and params
+    ScopedPointer<AudioProcessorValueTreeState> mState;
+    ScopedPointer<UndoManager> mUndoManager;
+    void initParams();
+    
+    //State save/load
+    XmlElement createXmlState();
+    void loadXmlState(XmlElement* xmlState);
+    
+    //Synthesiser (MIDI handling) component
     GrainSynth synth;
     void initSynth();
-    
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextureSynthAudioProcessor)
 };

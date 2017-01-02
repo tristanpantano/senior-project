@@ -86,21 +86,32 @@ void Grain::synthesize(AudioSampleBuffer& outputBuffer, AudioSampleBuffer* sourc
 //==============================================================================
 //Granulator
 //==============================================================================
-Granulator::Granulator() : sampleRate(44100.0), timeSkew(0.125), targetPitchInHz(440.0), samplesTilNextGrain(0), currentReadIndex(0), source(nullptr) {}
+Granulator::Granulator() : sampleRate(44100.0), targetPitchInHz(440.0), grainSizeInSec(0.040), samplesTilNextGrain(0), currentReadIndex(0), source(nullptr) {}
 void Granulator::prepareToPlay(double sr, int samplesPerBlock)
 {
     sampleRate = sr;
-    grainEnvelope.initialize(0.005, sr);
+    grainEnvelope.initialize(0.005, sr); //5 ms fade each end
     for(int i = 0; i < MAXGRAINPOLYPHONY; i++)
     {
         grainArray[i].setEnvelopePtr(&grainEnvelope);
     }
 }
 
+//Listener
+void Granulator::parameterChanged(const String &parameterID, float newValue)
+{
+    
+}
+
 //SequenceStrategy
+void Granulator::setTargetPitch(double pitchInHz)
+{
+    targetPitchInHz = pitchInHz;
+}
 int Granulator::nextDurationInSamples()
 {
-    return int((40.0/1000.0)*sampleRate); //40 ms @ SR
+    //return int(grainSizeInSec*sampleRate);
+    return 0.040*sampleRate;//2*nextInteronsetInSamples();
 }
 int Granulator::nextInteronsetInSamples()
 {
@@ -108,18 +119,26 @@ int Granulator::nextInteronsetInSamples()
 }
 void Granulator::advanceReadIndex(int samplesElapsed)
 {
-    currentReadIndex += int(samplesElapsed*timeSkew);
+    currentReadIndex += int(samplesElapsed*getResamplingRatio());
 }
 void Granulator::restartReadIndex()
 {
     currentReadIndex = 0;
     //should handle looping and an inlaid startpos...
 }
+double Granulator::getResamplingRatio()
+{
+    return (sampleRate/sourceSampleRate)*(targetPitchInHz/sourcePitchInHz);
+}
 
 //Scheduler
-void Granulator::retrigger(int startPos)
+void Granulator::retrigger()
 {
-    currentReadIndex = startPos;
+    for(int i = 0; i < MAXGRAINPOLYPHONY; i++)
+    {
+        grainArray[i].setActive(false);
+    }
+    currentReadIndex = 0;
 }
 void Granulator::renderNextBlock(AudioSampleBuffer& outputBuffer, int startSample, int numSamples)
 {
@@ -174,8 +193,10 @@ int Granulator::initFreeGrain(AudioSampleBuffer& outputBuffer)
     return -1; //no free grains
 }
 
-//Grain
-
-//Envelope
-
 //Source
+void Granulator::setSource(AudioSampleBuffer* s, double sr, double pitch)
+{
+    source = s;
+    sourceSampleRate = sr;
+    sourcePitchInHz = pitch;
+}
