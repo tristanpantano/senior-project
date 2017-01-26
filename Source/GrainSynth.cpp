@@ -81,7 +81,35 @@ bool GrainSynthSound::appliesToChannel (int /*midiChannel*/)
 //==============================================================================
 //GrainSynthVoice: an actual voice / sound-generator implementation controlled by MIDI
 //==============================================================================
-GrainSynthVoice::GrainSynthVoice(){}
+GrainSynthVoice::GrainSynthVoice() : voiceBuffer(2, 2048)
+{
+    timeSinceTrigger = 0.0;
+    isReleasing = false;
+}
+
+void GrainSynthVoice::parameterChanged(const String &parameterID, float newValue)
+{
+    if(parameterID == "ampenvatk")
+    {
+        ampEnv.setAttack(newValue*0.001);
+    }
+    else if(parameterID == "ampenvhold")
+    {
+        ampEnv.setHold(newValue*0.001);
+    }
+    else if(parameterID == "ampenvdec")
+    {
+        ampEnv.setDecay(newValue*0.001);
+    }
+    else if(parameterID == "ampenvsus")
+    {
+        ampEnv.setSustain(newValue);
+    }
+    else if(parameterID == "ampenvrel")
+    {
+        ampEnv.setRelease(newValue*0.001);
+    }
+}
 
 bool GrainSynthVoice::canPlaySound(SynthesiserSound* s)
 {
@@ -93,6 +121,9 @@ void GrainSynthVoice::startNote(int midiNoteNumber, float velocity, SynthesiserS
 {
     if(const GrainSynthSound* const sound = dynamic_cast<const GrainSynthSound*> (s))
     {
+        isReleasing = false;
+        timeSinceTrigger = 0.0;
+        
         granulator.retrigger();
         granulator.setSource(sound->bufferedFile, sound->sourceSampleRate, sound->defaultPitchInHz);
         granulator.setTargetPitch(MidiMessage::getMidiNoteInHertz(midiNoteNumber));
@@ -102,12 +133,15 @@ void GrainSynthVoice::startNote(int midiNoteNumber, float velocity, SynthesiserS
         jassertfalse; //sound attached is not a GrainSynthSound
     }
 }
-void GrainSynthVoice::stopNote (float velocity, bool allowTailOff)
+void GrainSynthVoice::stopNote(float velocity, bool allowTailOff)
 {
     if(allowTailOff)
     {
-        //trigger releasing
-        clearCurrentNote();
+        if(!isReleasing) //potential for multiple stop note messages
+        {
+            isReleasing = true;
+            timeSinceTrigger = 0.0;
+        }
     }
     else
     {
@@ -126,6 +160,46 @@ void GrainSynthVoice::renderNextBlock (AudioSampleBuffer& outputBuffer, int star
 {
     if (const GrainSynthSound* const playingSound = static_cast<GrainSynthSound*> (getCurrentlyPlayingSound().get()))
     {
-        granulator.renderNextBlock(outputBuffer, startSample, numSamples);
+        voiceBuffer.clear();
+        
+        //Render granulator output
+        granulator.renderNextBlock(voiceBuffer, startSample, numSamples);
+        
+        //Envelope handling
+        for(int currentSample = startSample; currentSample < startSample+numSamples; currentSample++)
+        {
+            timeSinceTrigger += 1.0 / getSampleRate();
+            
+            //Process volume envelope
+            double volEnvValue;
+            if(isReleasing)
+            {
+                volEnvValue = ampEnv.getReleaseValue(timeSinceTrigger);
+                if(volEnvValue <= 0.0)
+                {
+                    voiceBuffer.applyGain(currentSample, voiceBuffer.getNumSamples() - currentSample, 0.0);
+                    clearCurrentNote();
+                    break;
+                }
+            }
+            else
+            {
+                volEnvValue = ampEnv.getEnvelopeValue(timeSinceTrigger);
+            }
+            float* writeChannel;
+            for(int channel = 0; channel < voiceBuffer.getNumChannels(); channel++)
+            {
+                writeChannel = voiceBuffer.getWritePointer(channel);
+                writeChannel[currentSample] *= volEnvValue;
+            }
+        }
+        
+        //Add internal voice buffer to output buffer
+        for(int channel = 0; channel < outputBuffer.getNumChannels(); channel++)
+        {
+            outputBuffer.addFrom(channel, startSample, voiceBuffer, channel, startSample, numSamples);
+        }
     }
+    
+    
 }

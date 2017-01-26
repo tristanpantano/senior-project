@@ -14,6 +14,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "dRowAudio.h"
 #include "Granulator.h"
+#include "Envelope.h"
 
 //==============================================================================
 //GrainSynth: synthesiser object providing overhead for voices and sound creation
@@ -56,12 +57,14 @@ private:
 //==============================================================================
 //GrainSynthVoice: an actual voice / sound-generator implementation controlled by MIDI
 //==============================================================================
-class GrainSynthVoice : public SynthesiserVoice
+class GrainSynthVoice : public SynthesiserVoice, public AudioProcessorValueTreeState::Listener
 {
 public:
     GrainSynthVoice();
     
     Granulator* getGranulator() { return &granulator; }
+    
+    void parameterChanged(const String &parameterID, float newValue) override;
     
     bool canPlaySound (SynthesiserSound* s) override;
     
@@ -75,7 +78,11 @@ public:
     void renderNextBlock (AudioSampleBuffer& outputBuffer, int startSample, int numSamples) override;
     
 private:
+    AudioSampleBuffer voiceBuffer;
     Granulator granulator;
+    double timeSinceTrigger;
+    bool isReleasing;
+    Envelope ampEnv;
 };
 
 

@@ -27,7 +27,7 @@ void TextureSynthAudioProcessorEditor::paint (Graphics& g)
     g.fillAll (Colours::white);
     
     //Thumbnail painting
-    const Rectangle<int> thumbnailBounds (10, 100, getWidth() - 20, getHeight() - 120);
+    const Rectangle<int> thumbnailBounds (10, 50, 300, 150);
     paintThumbnail(g, thumbnailBounds);
 }
 
@@ -35,7 +35,7 @@ void TextureSynthAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
-    fileLoadButton.setBounds(10, 10, 40, 20);
+    fileLoadButton.setBounds(10, 205, 40, 20);
     
 }
 

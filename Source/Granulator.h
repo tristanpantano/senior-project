@@ -41,7 +41,7 @@ public:
     void initialize(int sourceReadIndex, int lengthInSamples);
     bool isActive() { return active; }
     
-    void synthesize(AudioSampleBuffer& outputBuffer, AudioSampleBuffer* sourceBuffer, int startSample);
+    void synthesize(AudioSampleBuffer& outputBuffer, AudioSampleBuffer* sourceBuffer, int startSample, int numSamples);
     
     void setEnvelopePtr(GrainEnvelope* env){ envelope = env; }
     void setActive(bool isActive){ active = isActive; }
@@ -76,7 +76,7 @@ public:
     //Scheduler
     void retrigger();
     void renderNextBlock(AudioSampleBuffer& outputBuffer, int startSample, int numSamples);
-    int initFreeGrain(AudioSampleBuffer& outputBuffer); //returns -1 if no free grains
+    int initFreeGrain(); //returns -1 if no free grains
     
     //Source
     void setSource(AudioSampleBuffer* s, double sr, double pitch);

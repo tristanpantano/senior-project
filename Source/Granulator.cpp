@@ -56,7 +56,7 @@ void Grain::initialize(int sourceReadIndex, int lengthInSamples)
     posInGrain = 0;
 }
 
-void Grain::synthesize(AudioSampleBuffer& outputBuffer, AudioSampleBuffer* sourceBuffer, int startSample)
+void Grain::synthesize(AudioSampleBuffer& outputBuffer, AudioSampleBuffer* sourceBuffer, int startSample, int numSamples)
 {
     const float* inL = sourceBuffer->getReadPointer(0);
     const float* inR = sourceBuffer->getReadPointer(1);
@@ -65,7 +65,7 @@ void Grain::synthesize(AudioSampleBuffer& outputBuffer, AudioSampleBuffer* sourc
     
     int readIndex;
     double envGain;
-    for(int i = startSample; i < outputBuffer.getNumSamples(); i++)
+    for(int i = startSample; i < startSample+numSamples; i++)
     {
         if(posInGrain >= sampleLength) break;
         
@@ -90,7 +90,7 @@ Granulator::Granulator() : sampleRate(44100.0), targetPitchInHz(440.0), grainSiz
 void Granulator::prepareToPlay(double sr, int samplesPerBlock)
 {
     sampleRate = sr;
-    grainEnvelope.initialize(0.005, sr); //5 ms fade each end
+    grainEnvelope.initialize(0.010, sr); //10 ms fade each end
     for(int i = 0; i < MAXGRAINPOLYPHONY; i++)
     {
         grainArray[i].setEnvelopePtr(&grainEnvelope);
@@ -149,22 +149,33 @@ void Granulator::renderNextBlock(AudioSampleBuffer& outputBuffer, int startSampl
         {
             if(grainArray[i].isActive())
             {
-                grainArray[i].synthesize(outputBuffer, source, 0);
+                grainArray[i].synthesize(outputBuffer, source, startSample, numSamples);
             }
         }
         
         //Output new grains if needed
-        while(samplesTilNextGrain < outputBuffer.getNumSamples())
+        while(samplesTilNextGrain < numSamples)
         {
-            if(initFreeGrain(outputBuffer) == -1) return;
+            int newGrainIndex = initFreeGrain();
+            if(newGrainIndex == -1)
+            {
+                return;
+            }
+            else
+            {
+                grainArray[newGrainIndex].synthesize(outputBuffer, source, samplesTilNextGrain+startSample, numSamples-samplesTilNextGrain);
+                
+                int interonset = nextInteronsetInSamples();
+                advanceReadIndex(interonset);
+                samplesTilNextGrain += interonset;
+            }
         }
-        samplesTilNextGrain -= outputBuffer.getNumSamples();
+        samplesTilNextGrain -= numSamples;
     }
 }
-int Granulator::initFreeGrain(AudioSampleBuffer& outputBuffer)
+int Granulator::initFreeGrain()
 {
-    int i;
-    for(i = 0; i < MAXGRAINPOLYPHONY; i++)
+    for(int i = 0; i < MAXGRAINPOLYPHONY; i++)
     {
         if(!grainArray[i].isActive())
         {
@@ -180,11 +191,6 @@ int Granulator::initFreeGrain(AudioSampleBuffer& outputBuffer)
             {
                 grainArray[i].initialize(currentReadIndex, length);
             }
-            grainArray[i].synthesize(outputBuffer, source, samplesTilNextGrain);
-            
-            int interonset = nextInteronsetInSamples();
-            advanceReadIndex(interonset);
-            samplesTilNextGrain += interonset;
             
             return i;
         }

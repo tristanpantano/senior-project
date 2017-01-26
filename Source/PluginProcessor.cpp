@@ -16,6 +16,9 @@ const int TextureSynthAudioProcessor::MAXPOLYPHONY = 4;
 String TextureSynthAudioProcessor::grainParamArray[] = {"gsize", "gtimescale"};//, "gphasedecorrelate", "gdetune", "gcoarse", "gfine", "gstereowidth"};
 const int TextureSynthAudioProcessor::NUMGRANULATORPARAMS = 2;
 
+String TextureSynthAudioProcessor::synthParamArray[] = {"ampenvatk", "ampenvhold", "ampenvdec", "ampenvsus", "ampenvrel"};
+const int TextureSynthAudioProcessor::NUMSYNTHPARAMS = 5;
+
 //==============================================================================
 TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr), fileAddress(""), thumbnailCache(5), thumbnail(512, mFormatManager, thumbnailCache)
 {
@@ -42,6 +45,16 @@ void TextureSynthAudioProcessor::initParams()
     //Granulator Parameters
     mState->createAndAddParameter(grainParamArray[0], "Grain Size", " ms", NormalisableRange<float>(10, 80, 1), 40, nullptr, nullptr);
     mState->createAndAddParameter(grainParamArray[1], "Time Scale", " %", NormalisableRange<float>(1, 50, 0.5), 12.5, nullptr, nullptr);
+    
+    //Synth Parameters
+    //"ampenvatk", "ampenvhold", "ampenvdec", "ampenvsus", "ampenvrel"
+    mState->createAndAddParameter(synthParamArray[0], "Amp. Atk.", " ms", NormalisableRange<float>(0.0, 4000, 0.0), 0.0, nullptr, nullptr);
+    mState->createAndAddParameter(synthParamArray[1], "Amp. Hold", " ms", NormalisableRange<float>(0.0, 4000, 0.0), 0.0, nullptr, nullptr);
+    mState->createAndAddParameter(synthParamArray[2], "Amp. Dec.", " ms", NormalisableRange<float>(0.0, 4000, 0.0), 0.0, nullptr, nullptr);
+    mState->createAndAddParameter(synthParamArray[3], "Amp. Sus.", " dB", NormalisableRange<float>(0.0, 1.0, 0.0), 0.0, nullptr, nullptr);
+    mState->createAndAddParameter(synthParamArray[4], "Amp. Rel.", " ms", NormalisableRange<float>(0.0, 4000, 0.0), 0.0, nullptr, nullptr);
+    
+    //Attach granulator&synth params
     for(int j = 0; j < synth.getNumVoices(); j++) //Make each synth's voice's granulator a listener
     {
         GrainSynthVoice* tempVoice = (GrainSynthVoice*)synth.getVoice(j);
@@ -52,7 +65,14 @@ void TextureSynthAudioProcessor::initParams()
             AudioProcessorParameter* tempForInit = mState->getParameter(grainParamArray[i]);
             tempForInit->setValueNotifyingHost(tempForInit->getValue());
         }
+        for(int i = 0; i < NUMSYNTHPARAMS; i++)
+        {
+            mState->addParameterListener(synthParamArray[i], tempVoice);
+            AudioProcessorParameter* tempForInit = mState->getParameter(synthParamArray[i]);
+            tempForInit->setValueNotifyingHost(tempForInit->getValue());
+        }
     }
+    
 }
 TextureSynthAudioProcessor::~TextureSynthAudioProcessor()
 {
@@ -64,6 +84,10 @@ TextureSynthAudioProcessor::~TextureSynthAudioProcessor()
         for(int i = 0; i < NUMGRANULATORPARAMS; i++)
         {
             mState->removeParameterListener(grainParamArray[i], granulator);
+        }
+        for(int i = 0; i < NUMSYNTHPARAMS; i++)
+        {
+            mState->removeParameterListener(synthParamArray[i], tempVoice);
         }
     }
 }

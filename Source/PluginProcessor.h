@@ -63,6 +63,9 @@ public:
     static String grainParamArray[];
     static const int NUMGRANULATORPARAMS;
     
+    static String synthParamArray[];
+    static const int NUMSYNTHPARAMS;
+    
     //==============================================================================
     //File reading methods
     void setFileReader(File& file);
