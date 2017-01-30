@@ -51,6 +51,16 @@ void GrainSynth::createNewSoundFromFile(AudioFormatReader* source)
     }
 }
 
+void GrainSynth::parameterChanged(const String &parameterID, float newValue)
+{
+    GrainSynthVoice* temp;
+    for(int i = 0; i < getNumVoices(); i++)
+    {
+        temp = (GrainSynthVoice*)getVoice(i);
+        temp->parameterChanged(parameterID, newValue);
+    }
+}
+
 //==============================================================================
 //GrainSynthSound: a descriptor of a sound this synth will play; holds loaded file data
 //==============================================================================
@@ -85,6 +95,7 @@ GrainSynthVoice::GrainSynthVoice() : voiceBuffer(2, 2048)
 {
     timeSinceTrigger = 0.0;
     isReleasing = false;
+    grainAmpGain = 1.0;
 }
 
 void GrainSynthVoice::parameterChanged(const String &parameterID, float newValue)
@@ -103,11 +114,79 @@ void GrainSynthVoice::parameterChanged(const String &parameterID, float newValue
     }
     else if(parameterID == "ampenvsus")
     {
-        ampEnv.setSustain(newValue);
+        ampEnv.setSustain(newValue*0.01);
     }
     else if(parameterID == "ampenvrel")
     {
         ampEnv.setRelease(newValue*0.001);
+    }
+    else if(parameterID == "ampgain")
+    {
+        grainAmpGain = Decibels::decibelsToGain(newValue);
+    }
+    else if(parameterID == "hpcutoff")
+    {
+        hpFreq = newValue;
+    }
+    else if(parameterID == "hpreso")
+    {
+        hpResonance = newValue;
+    }
+    else if(parameterID == "hpenvatk")
+    {
+        hpEnv.setAttack(newValue*0.001);
+    }
+    else if(parameterID == "hpenvhold")
+    {
+        hpEnv.setHold(newValue*0.001);
+    }
+    else if(parameterID == "hpenvdec")
+    {
+        hpEnv.setDecay(newValue*0.001);
+    }
+    else if(parameterID == "hpenvsus")
+    {
+        hpEnv.setSustain(newValue*0.01);
+    }
+    else if(parameterID == "hpenvrel")
+    {
+        hpEnv.setRelease(newValue*0.001);
+    }
+    else if(parameterID == "hpdepth")
+    {
+        hpDepth = newValue;
+    }
+    else if(parameterID == "lpcutoff")
+    {
+        lpFreq = newValue;
+    }
+    else if(parameterID == "lpreso")
+    {
+        lpResonance = newValue;
+    }
+    else if(parameterID == "lpenvatk")
+    {
+        lpEnv.setAttack(newValue*0.001);
+    }
+    else if(parameterID == "lpenvhold")
+    {
+        lpEnv.setHold(newValue*0.001);
+    }
+    else if(parameterID == "lpenvdec")
+    {
+        lpEnv.setDecay(newValue*0.001);
+    }
+    else if(parameterID == "lpenvsus")
+    {
+        lpEnv.setSustain(newValue*0.01);
+    }
+    else if(parameterID == "lpenvrel")
+    {
+        lpEnv.setRelease(newValue*0.001);
+    }
+    else if(parameterID == "lpdepth")
+    {
+        lpDepth = newValue;
     }
 }
 
@@ -127,6 +206,11 @@ void GrainSynthVoice::startNote(int midiNoteNumber, float velocity, SynthesiserS
         granulator.retrigger();
         granulator.setSource(sound->bufferedFile, sound->sourceSampleRate, sound->defaultPitchInHz);
         granulator.setTargetPitch(MidiMessage::getMidiNoteInHertz(midiNoteNumber));
+        
+        leftHighpass.reset();
+        rightHighpass.reset();
+        leftLowpass.reset();
+        rightLowpass.reset();
     }
     else
     {
@@ -170,29 +254,58 @@ void GrainSynthVoice::renderNextBlock (AudioSampleBuffer& outputBuffer, int star
         {
             timeSinceTrigger += 1.0 / getSampleRate();
             
-            //Process volume envelope
-            double volEnvValue;
+            //Process envelopes
+            double volEnvValue, hpEnvValue, lpEnvValue;
             if(isReleasing)
             {
                 volEnvValue = ampEnv.getReleaseValue(timeSinceTrigger);
                 if(volEnvValue <= 0.0)
                 {
-                    voiceBuffer.applyGain(currentSample, voiceBuffer.getNumSamples() - currentSample, 0.0);
+                    voiceBuffer.clear(currentSample, (startSample+numSamples)-currentSample);
                     clearCurrentNote();
                     break;
                 }
+                
+                hpEnvValue = hpEnv.getReleaseValue(timeSinceTrigger);
+                lpEnvValue = lpEnv.getReleaseValue(timeSinceTrigger);
             }
             else
             {
                 volEnvValue = ampEnv.getEnvelopeValue(timeSinceTrigger);
+                hpEnvValue = hpEnv.getEnvelopeValue(timeSinceTrigger);
+                lpEnvValue = lpEnv.getEnvelopeValue(timeSinceTrigger);
             }
-            float* writeChannel;
-            for(int channel = 0; channel < voiceBuffer.getNumChannels(); channel++)
-            {
-                writeChannel = voiceBuffer.getWritePointer(channel);
-                writeChannel[currentSample] *= volEnvValue;
-            }
+            
+            //Calculate highpass coefficients
+            double modHpFreq = hpFreq + hpEnvValue*hpDepth;
+            if(modHpFreq > 20000.0){ modHpFreq = 20000.0;}
+            else if(modHpFreq < 20.0){ modHpFreq = 20.0;}
+            IIRCoefficients hpfCoeff = drow::BiquadFilter::makeHighPass(getSampleRate(), modHpFreq, hpResonance);
+            leftHighpass.setCoefficients(hpfCoeff);
+            rightHighpass.setCoefficients(hpfCoeff);
+            
+            //Calculate lowpass coefficients
+            double modLpFreq = lpFreq + lpEnvValue*lpDepth;
+            if(modLpFreq > 20000.0){ modLpFreq = 20000.0;}
+            else if(modLpFreq < 20.0){ modLpFreq = 20.0;}
+            IIRCoefficients lpfCoeff = drow::BiquadFilter::makeLowPass(getSampleRate(), modLpFreq, lpResonance);
+            leftLowpass.setCoefficients(lpfCoeff);
+            rightLowpass.setCoefficients(lpfCoeff);
+            
+            //Apply envelopes to left
+            float* writeChannel = voiceBuffer.getWritePointer(0, currentSample);
+            writeChannel[0] *= volEnvValue;
+            leftHighpass.processSamples(writeChannel, 1);
+            leftLowpass.processSamples(writeChannel, 1);
+            
+            //Apply envelopes to right
+            writeChannel = voiceBuffer.getWritePointer(1, currentSample);
+            writeChannel[0] *= volEnvValue;
+            rightHighpass.processSamples(writeChannel, 1);
+            rightLowpass.processSamples(writeChannel, 1);
+            
         }
+        voiceBuffer.applyGain(startSample, numSamples, grainAmpGain);
         
         //Add internal voice buffer to output buffer
         for(int channel = 0; channel < outputBuffer.getNumChannels(); channel++)

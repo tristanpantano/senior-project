@@ -90,7 +90,7 @@ Granulator::Granulator() : sampleRate(44100.0), targetPitchInHz(440.0), grainSiz
 void Granulator::prepareToPlay(double sr, int samplesPerBlock)
 {
     sampleRate = sr;
-    grainEnvelope.initialize(0.010, sr); //10 ms fade each end
+    grainEnvelope.initialize(0.005, sr); //5 ms fade each end
     for(int i = 0; i < MAXGRAINPOLYPHONY; i++)
     {
         grainArray[i].setEnvelopePtr(&grainEnvelope);

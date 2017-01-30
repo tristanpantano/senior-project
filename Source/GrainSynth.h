@@ -19,13 +19,15 @@
 //==============================================================================
 //GrainSynth: synthesiser object providing overhead for voices and sound creation
 //==============================================================================
-class GrainSynth : public Synthesiser
+class GrainSynth : public Synthesiser, public AudioProcessorValueTreeState::Listener
 {
 public:
     GrainSynth();
 
     void prepareToPlay(double sampleRate, int samplesPerBlock);
     void createNewSoundFromFile(AudioFormatReader* source);
+    
+    void parameterChanged(const String &parameterID, float newValue) override;
     
 private:
     drow::PitchDetector pitchDetector;
@@ -57,14 +59,14 @@ private:
 //==============================================================================
 //GrainSynthVoice: an actual voice / sound-generator implementation controlled by MIDI
 //==============================================================================
-class GrainSynthVoice : public SynthesiserVoice, public AudioProcessorValueTreeState::Listener
+class GrainSynthVoice : public SynthesiserVoice
 {
 public:
     GrainSynthVoice();
     
     Granulator* getGranulator() { return &granulator; }
     
-    void parameterChanged(const String &parameterID, float newValue) override;
+    void parameterChanged(const String &parameterID, float newValue);
     
     bool canPlaySound (SynthesiserSound* s) override;
     
@@ -80,9 +82,12 @@ public:
 private:
     AudioSampleBuffer voiceBuffer;
     Granulator granulator;
-    double timeSinceTrigger;
+    double timeSinceTrigger, grainAmpGain;
     bool isReleasing;
-    Envelope ampEnv;
+    Envelope ampEnv, hpEnv, lpEnv;
+    
+    double lpFreq, lpResonance, lpDepth, hpFreq, hpResonance, hpDepth;
+    IIRFilter leftHighpass, rightHighpass, leftLowpass, rightLowpass;
 };
 
 

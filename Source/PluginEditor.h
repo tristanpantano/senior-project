@@ -35,14 +35,29 @@ public:
     
     //Change Listener
     void changeListenerCallback(ChangeBroadcaster* source) override;
+    
+    //Bound rectangles
+    static const Rectangle<int> thumbnailBounds;
 
+    //Constants
+    static const int numSliders;
+    
 private:
     //Buttons
     TextButton fileLoadButton;
     void loadButtonClicked();
     
-    //Knobs & Sliders
-    void initKnob(Slider& knob);
+    //Sliders
+    int sliderAttachIndex;
+    ScopedPointer<AudioProcessorValueTreeState::SliderAttachment> *sliderAttachments;
+    void initSlider(Slider& slider, const String parameterID);
+    Slider sliderGainEnvAtk, sliderGainEnvHold, sliderGainEnvDec, sliderGainEnvSus, sliderGainEnvRel;
+    Slider sliderHpfEnvAtk, sliderHpfEnvHold, sliderHpfEnvDec, sliderHpfEnvSus, sliderHpfEnvRel, sliderHpfDepth;
+    Slider sliderLpfEnvAtk, sliderLpfEnvHold, sliderLpfEnvDec, sliderLpfEnvSus, sliderLpfEnvRel, sliderLpfDepth;
+    
+    //Knobs
+    void initKnob(Slider& knob, const String parameterID);
+    Slider knobGain, knobHpCutoff, knobHpReso, knobLpCutoff, knobLpReso;
     
     //Thumbnail
     void paintThumbnail(Graphics& g, const Rectangle<int> thumbnailBounds);

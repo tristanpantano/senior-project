@@ -17,7 +17,7 @@
 //==============================================================================
 /**
 */
-class TextureSynthAudioProcessor  : public AudioProcessor
+class TextureSynthAudioProcessor  : public AudioProcessor, public AudioProcessorValueTreeState::Listener
 {
 public:
     //==============================================================================
@@ -66,6 +66,10 @@ public:
     static String synthParamArray[];
     static const int NUMSYNTHPARAMS;
     
+    void parameterChanged(const String &parameterID, float newValue) override;
+    
+    static double getSkewFromMidpoint(double min, double max, double midpoint);
+    
     //==============================================================================
     //File reading methods
     void setFileReader(File& file);
@@ -96,6 +100,7 @@ private:
     //Synthesiser (MIDI handling) component
     GrainSynth synth;
     void initSynth();
+    
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextureSynthAudioProcessor)

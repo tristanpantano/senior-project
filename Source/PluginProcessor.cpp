@@ -16,8 +16,8 @@ const int TextureSynthAudioProcessor::MAXPOLYPHONY = 4;
 String TextureSynthAudioProcessor::grainParamArray[] = {"gsize", "gtimescale"};//, "gphasedecorrelate", "gdetune", "gcoarse", "gfine", "gstereowidth"};
 const int TextureSynthAudioProcessor::NUMGRANULATORPARAMS = 2;
 
-String TextureSynthAudioProcessor::synthParamArray[] = {"ampenvatk", "ampenvhold", "ampenvdec", "ampenvsus", "ampenvrel"};
-const int TextureSynthAudioProcessor::NUMSYNTHPARAMS = 5;
+String TextureSynthAudioProcessor::synthParamArray[] = {"ampenvatk", "ampenvhold", "ampenvdec", "ampenvsus", "ampenvrel", "ampgain", "hpcutoff", "hpreso", "hpenvatk", "hpenvhold", "hpenvdec", "hpenvsus", "hpenvrel", "hpdepth", "lpcutoff", "lpreso", "lpenvatk", "lpenvhold", "lpenvdec", "lpenvsus", "lpenvrel", "lpdepth"};
+const int TextureSynthAudioProcessor::NUMSYNTHPARAMS = 22;
 
 //==============================================================================
 TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr), fileAddress(""), thumbnailCache(5), thumbnail(512, mFormatManager, thumbnailCache)
@@ -42,19 +42,56 @@ void TextureSynthAudioProcessor::initSynth()
 }
 void TextureSynthAudioProcessor::initParams()
 {
+    NormalisableRange<float> dBRange(Decibels::gainToDecibels(0.0), Decibels::gainToDecibels(2.0), 0.0, getSkewFromMidpoint(Decibels::gainToDecibels(0.0), Decibels::gainToDecibels(2.0), 0.0));
+    double depthSkew = getSkewFromMidpoint(20.0, 20000.0, 2000.0);
+    NormalisableRange<float> hzRange(20.0, 20000.0, 0.0, getSkewFromMidpoint(20.0, 20000.0, 632.46));
+    NormalisableRange<float> qRange(0.10, 18.0, 0.0, getSkewFromMidpoint(0.10, 18.0, 1.34));
+    NormalisableRange<float> envTimeRange(0.0, 15000.0, 0.0, getSkewFromMidpoint(0.0, 15000.0, 1000.0));
+    
+    std::function<String (float)> dbValueToTextFunction = [](float value){ return Decibels::toString(value) + " dB"; };
+    std::function<String (float)> hzValueToTextFunction = [](float value){ return String(value) + " hz";};
+    std::function<String (float)> msValueToTextFunction = [](float value){ return String(value) + " ms";};
+    std::function<String (float)> percentValueToTextFunction = [](float value){ return String(value) + "%";};
+    
     //Granulator Parameters
     mState->createAndAddParameter(grainParamArray[0], "Grain Size", " ms", NormalisableRange<float>(10, 80, 1), 40, nullptr, nullptr);
     mState->createAndAddParameter(grainParamArray[1], "Time Scale", " %", NormalisableRange<float>(1, 50, 0.5), 12.5, nullptr, nullptr);
     
     //Synth Parameters
-    //"ampenvatk", "ampenvhold", "ampenvdec", "ampenvsus", "ampenvrel"
-    mState->createAndAddParameter(synthParamArray[0], "Amp. Atk.", " ms", NormalisableRange<float>(0.0, 4000, 0.0), 0.0, nullptr, nullptr);
-    mState->createAndAddParameter(synthParamArray[1], "Amp. Hold", " ms", NormalisableRange<float>(0.0, 4000, 0.0), 0.0, nullptr, nullptr);
-    mState->createAndAddParameter(synthParamArray[2], "Amp. Dec.", " ms", NormalisableRange<float>(0.0, 4000, 0.0), 0.0, nullptr, nullptr);
-    mState->createAndAddParameter(synthParamArray[3], "Amp. Sus.", " dB", NormalisableRange<float>(0.0, 1.0, 0.0), 0.0, nullptr, nullptr);
-    mState->createAndAddParameter(synthParamArray[4], "Amp. Rel.", " ms", NormalisableRange<float>(0.0, 4000, 0.0), 0.0, nullptr, nullptr);
+    mState->createAndAddParameter(synthParamArray[0], "Amp. Atk.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[1], "Amp. Hold", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[2], "Amp. Dec.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[3], "Amp. Sus.", " %", NormalisableRange<float>(0.0, 100.0, 1.0), 100.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[4], "Amp. Rel.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[5], "Amp. Gain", " dB", dBRange, 0.0, dbValueToTextFunction, nullptr);
     
-    //Attach granulator&synth params
+    mState->createAndAddParameter(synthParamArray[6], "HPF Cutoff", " hz", hzRange, 20.0, hzValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[7], "HPF Res.", "", qRange, 0.71, nullptr, nullptr);
+    mState->createAndAddParameter(synthParamArray[8], "HPF Atk.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[9], "HPF Hold", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[10], "HPF Dec.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[11], "HPF Sus.", " %", NormalisableRange<float>(0.0, 100.0, 1.0), 100.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[12], "HPF Rel.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[13], "HPF Depth", " hz", NormalisableRange<float>(-20000.0, 20000.0, 1.0, depthSkew, true), 0.0, hzValueToTextFunction, nullptr);
+    
+    mState->createAndAddParameter(synthParamArray[14], "LPF Cutoff", " hz", hzRange, 20000.0, hzValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[15], "LPF Res.", "", qRange, 0.71, nullptr, nullptr);
+    mState->createAndAddParameter(synthParamArray[16], "LPF Atk.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[17], "LPF Hold", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[18], "LPF Dec.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[19], "LPF Sus.", " %", NormalisableRange<float>(0.0, 100.0, 1.0), 100.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[20], "LPF Rel.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[21], "LPF Depth", " hz", NormalisableRange<float>(-20000.0, 20000.0, 1.0, depthSkew, true), 0.0, hzValueToTextFunction, nullptr);
+    
+    //Attach synth params
+    for(int i = 0; i < NUMSYNTHPARAMS; i++)
+    {
+        mState->addParameterListener(synthParamArray[i], &synth);
+        AudioProcessorParameter* tempForInit = mState->getParameter(synthParamArray[i]);
+        tempForInit->setValueNotifyingHost(tempForInit->getValue());
+    }
+    
+    //Attach granulator params per voice
     for(int j = 0; j < synth.getNumVoices(); j++) //Make each synth's voice's granulator a listener
     {
         GrainSynthVoice* tempVoice = (GrainSynthVoice*)synth.getVoice(j);
@@ -65,18 +102,23 @@ void TextureSynthAudioProcessor::initParams()
             AudioProcessorParameter* tempForInit = mState->getParameter(grainParamArray[i]);
             tempForInit->setValueNotifyingHost(tempForInit->getValue());
         }
-        for(int i = 0; i < NUMSYNTHPARAMS; i++)
-        {
-            mState->addParameterListener(synthParamArray[i], tempVoice);
-            AudioProcessorParameter* tempForInit = mState->getParameter(synthParamArray[i]);
-            tempForInit->setValueNotifyingHost(tempForInit->getValue());
-        }
     }
     
+}
+double TextureSynthAudioProcessor::getSkewFromMidpoint(double min, double max, double midpoint)
+{
+    return log (0.5) / log ((midpoint - min) / (max - min));
+}
+void TextureSynthAudioProcessor::parameterChanged(const String &parameterID, float newValue)
+{
 }
 TextureSynthAudioProcessor::~TextureSynthAudioProcessor()
 {
     //Detach synth's voice's granulators from being processor state listeners
+    for(int i = 0; i < NUMSYNTHPARAMS; i++)
+    {
+        mState->removeParameterListener(synthParamArray[i], &synth);
+    }
     for(int j = 0; j < synth.getNumVoices(); j++)
     {
         GrainSynthVoice* tempVoice = (GrainSynthVoice*) synth.getVoice(j);
@@ -84,10 +126,6 @@ TextureSynthAudioProcessor::~TextureSynthAudioProcessor()
         for(int i = 0; i < NUMGRANULATORPARAMS; i++)
         {
             mState->removeParameterListener(grainParamArray[i], granulator);
-        }
-        for(int i = 0; i < NUMSYNTHPARAMS; i++)
-        {
-            mState->removeParameterListener(synthParamArray[i], tempVoice);
         }
     }
 }
@@ -188,7 +226,9 @@ void TextureSynthAudioProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuf
     
     buffer.clear();
     
+    //Render active granulators
     synth.renderNextBlock(buffer, midiMessages, 0, numSamples);
+    
 }
 
 //==============================================================================
