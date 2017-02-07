@@ -3,7 +3,7 @@
 
 const Rectangle<int> TextureSynthAudioProcessorEditor::thumbnailBounds(10, 50, 300, 150);
 
-const int TextureSynthAudioProcessorEditor::numSliders = 24;
+const int TextureSynthAudioProcessorEditor::numSliders = 28;
 
 //==============================================================================
 TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor& p)
@@ -24,6 +24,7 @@ TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynth
     //Loop controls
     initKnob(knobLoopStart, p.grainParamArray[0]);
     initKnob(knobLoopSize, p.grainParamArray[1]);
+    knobLoopSize.setSkewFactorFromMidPoint(0.25);
     
     //Amp Env
     initSlider(sliderGainEnvAtk, p.synthParamArray[0]);
@@ -62,6 +63,12 @@ TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynth
     knobLpReso.setSkewFactorFromMidPoint(1.34);
     sliderLpfEnvSus.setSkewFactorFromMidPoint(50.0);
     sliderLpfDepth.setSkewFactor(hzSkew, true);
+    
+    //ShimmerVerb
+    initKnob(knobVerbDryWet, p.verbParamArray[0]);
+    initKnob(knobVerbSize, p.verbParamArray[1]);
+    initKnob(knobVerbDamp, p.verbParamArray[2]);
+    initKnob(knobVerbWidth, p.verbParamArray[3]);
     
     //waveform thumbnail
     processor.getThumbnail()->addChangeListener(this);
@@ -126,6 +133,12 @@ void TextureSynthAudioProcessorEditor::resized()
     knobLpCutoff.setBounds(575, 225, 25, 25);
     knobLpReso.setBounds(575, 250, 25, 25);
     
+    
+    //ShimmerVerb
+    knobVerbSize.setBounds(700, 100, 50, 50);
+    knobVerbDamp.setBounds(700, 150, 50, 50);
+    knobVerbWidth.setBounds(700, 200, 50, 50);
+    knobVerbDryWet.setBounds(700, 250, 50, 50);
 }
 
 //==============================================================================

@@ -19,6 +19,9 @@ const int TextureSynthAudioProcessor::NUMGRANULATORPARAMS = 2;
 String TextureSynthAudioProcessor::synthParamArray[] = {"ampenvatk", "ampenvhold", "ampenvdec", "ampenvsus", "ampenvrel", "ampgain", "hpcutoff", "hpreso", "hpenvatk", "hpenvhold", "hpenvdec", "hpenvsus", "hpenvrel", "hpdepth", "lpcutoff", "lpreso", "lpenvatk", "lpenvhold", "lpenvdec", "lpenvsus", "lpenvrel", "lpdepth"};
 const int TextureSynthAudioProcessor::NUMSYNTHPARAMS = 22;
 
+String TextureSynthAudioProcessor::verbParamArray[] = {"rdrywet", "rsize", "rdamping", "rwidth"};
+const int TextureSynthAudioProcessor::NUMVERBPARAMS = 4;
+
 //==============================================================================
 TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr), fileAddress(""), thumbnailCache(5), thumbnail(512, mFormatManager, thumbnailCache)
 {
@@ -55,7 +58,7 @@ void TextureSynthAudioProcessor::initParams()
     
     //Granulator Parameters
     mState->createAndAddParameter(grainParamArray[0], "Loop Start", "", NormalisableRange<float>(0.0, 1.0, 0.0), 0.0, nullptr, nullptr);
-    mState->createAndAddParameter(grainParamArray[1], "Loop Size", "", NormalisableRange<float>(0.0, 1.0, 0.0), 1.0, nullptr, nullptr);
+    mState->createAndAddParameter(grainParamArray[1], "Loop Size", "", NormalisableRange<float>(0.0, 1.0, 0.0, getSkewFromMidpoint(0.0, 1.0, 0.25)), 1.0, nullptr, nullptr);
     
     //Synth Parameters
     mState->createAndAddParameter(synthParamArray[0], "Amp. Atk.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
@@ -83,6 +86,12 @@ void TextureSynthAudioProcessor::initParams()
     mState->createAndAddParameter(synthParamArray[20], "LPF Rel.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[21], "LPF Depth", " hz", NormalisableRange<float>(-20000.0, 20000.0, 1.0, depthSkew, true), 0.0, hzValueToTextFunction, nullptr);
     
+    //ShimmerVerb Parameters
+    mState->createAndAddParameter(verbParamArray[0], "Rvb Dry/Wet", " %", NormalisableRange<float>(0, 100.0, 1.0), 13.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(verbParamArray[1], "Rvb Size", " %", NormalisableRange<float>(0, 100.0, 1.0), 25.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(verbParamArray[2], "Rvb Damping", " %", NormalisableRange<float>(0, 100.0, 1.0), 33.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(verbParamArray[3], "Rvb Width", " %", NormalisableRange<float>(0, 100.0, 1.0), 25.0, percentValueToTextFunction, nullptr);
+    
     //Attach synth params
     for(int i = 0; i < NUMSYNTHPARAMS; i++)
     {
@@ -90,11 +99,18 @@ void TextureSynthAudioProcessor::initParams()
         AudioProcessorParameter* tempForInit = mState->getParameter(synthParamArray[i]);
         tempForInit->setValueNotifyingHost(tempForInit->getValue());
     }
-    
+    //Attach grain params
     for(int i = 0; i < NUMGRANULATORPARAMS; i++)
     {
         mState->addParameterListener(grainParamArray[i], &synth);
         AudioProcessorParameter* tempForInit = mState->getParameter(grainParamArray[i]);
+        tempForInit->setValueNotifyingHost(tempForInit->getValue());
+    }
+    //Attach shimmerverb params
+    for(int i = 0; i < NUMVERBPARAMS; i++)
+    {
+        mState->addParameterListener(verbParamArray[i], &shimmerVerb);
+        AudioProcessorParameter* tempForInit = mState->getParameter(verbParamArray[i]);
         tempForInit->setValueNotifyingHost(tempForInit->getValue());
     }
     
@@ -116,6 +132,10 @@ TextureSynthAudioProcessor::~TextureSynthAudioProcessor()
     for(int i = 0; i < NUMGRANULATORPARAMS; i++)
     {
         mState->removeParameterListener(grainParamArray[i], &synth);
+    }
+    for(int i = 0; i < NUMVERBPARAMS; i++)
+    {
+        mState->removeParameterListener(verbParamArray[i], &shimmerVerb);
     }
 }
 
@@ -176,6 +196,7 @@ void TextureSynthAudioProcessor::changeProgramName (int index, const String& new
 void TextureSynthAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     synth.prepareToPlay(sampleRate, samplesPerBlock);
+    shimmerVerb.prepareToPlay(sampleRate, samplesPerBlock);
 }
 
 void TextureSynthAudioProcessor::releaseResources()
@@ -215,9 +236,11 @@ void TextureSynthAudioProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuf
     
     buffer.clear();
     
-    //Render active granulators
+    //Render active granulator voices
     synth.renderNextBlock(buffer, midiMessages, 0, numSamples);
     
+    //Apply ShimmerVerb
+    shimmerVerb.renderNextBlock(buffer, 0, numSamples);
 }
 
 //==============================================================================

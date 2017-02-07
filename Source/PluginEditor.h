@@ -62,6 +62,7 @@ private:
     void initKnob(Slider& knob, const String parameterID);
     Slider knobLoopStart, knobLoopSize;
     Slider knobGain, knobHpCutoff, knobHpReso, knobLpCutoff, knobLpReso;
+    Slider knobVerbDryWet, knobVerbSize, knobVerbDamp, knobVerbWidth;
     
     //Thumbnail
     void paintThumbnail(Graphics& g, const Rectangle<int> thumbnailBounds);

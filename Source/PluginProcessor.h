@@ -13,6 +13,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "GrainSynth.h"
+#include "ShimmerVerb.h"
 
 //==============================================================================
 /**
@@ -66,6 +67,9 @@ public:
     static String synthParamArray[];
     static const int NUMSYNTHPARAMS;
     
+    static String verbParamArray[];
+    static const int NUMVERBPARAMS;
+    
     void parameterChanged(const String &parameterID, float newValue) override;
     
     static double getSkewFromMidpoint(double min, double max, double midpoint);
@@ -101,6 +105,8 @@ private:
     GrainSynth synth;
     void initSynth();
     
+    //ShimmerVerb
+    ShimmerVerb shimmerVerb;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextureSynthAudioProcessor)
