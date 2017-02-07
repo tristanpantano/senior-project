@@ -18,7 +18,7 @@
 //==============================================================================
 /**
 */
-class TextureSynthAudioProcessorEditor  : public AudioProcessorEditor, public Button::Listener, public ChangeListener
+class TextureSynthAudioProcessorEditor  : public AudioProcessorEditor, public Button::Listener, public ChangeListener, public Slider::Listener
 {
 public:
     TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor&);
@@ -35,6 +35,9 @@ public:
     
     //Change Listener
     void changeListenerCallback(ChangeBroadcaster* source) override;
+    
+    //Slider Listener
+    void sliderValueChanged (Slider *slider) override;
     
     //Bound rectangles
     static const Rectangle<int> thumbnailBounds;
@@ -57,6 +60,7 @@ private:
     
     //Knobs
     void initKnob(Slider& knob, const String parameterID);
+    Slider knobLoopStart, knobLoopSize;
     Slider knobGain, knobHpCutoff, knobHpReso, knobLpCutoff, knobLpReso;
     
     //Thumbnail

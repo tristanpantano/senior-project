@@ -3,7 +3,7 @@
 
 const Rectangle<int> TextureSynthAudioProcessorEditor::thumbnailBounds(10, 50, 300, 150);
 
-const int TextureSynthAudioProcessorEditor::numSliders = 22;
+const int TextureSynthAudioProcessorEditor::numSliders = 24;
 
 //==============================================================================
 TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor& p)
@@ -21,6 +21,10 @@ TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynth
     fileLoadButton.addListener(this);
     addAndMakeVisible(fileLoadButton);
     
+    //Loop controls
+    initKnob(knobLoopStart, p.grainParamArray[0]);
+    initKnob(knobLoopSize, p.grainParamArray[1]);
+    
     //Amp Env
     initSlider(sliderGainEnvAtk, p.synthParamArray[0]);
     initSlider(sliderGainEnvHold, p.synthParamArray[1]);
@@ -28,7 +32,7 @@ TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynth
     initSlider(sliderGainEnvSus, p.synthParamArray[3]);
     initSlider(sliderGainEnvRel, p.synthParamArray[4]);
     initKnob(knobGain, p.synthParamArray[5]);
-    sliderGainEnvSus.setSkewFactorFromMidPoint(0.5);
+    sliderGainEnvSus.setSkewFactorFromMidPoint(50.0);
     knobGain.setSkewFactorFromMidPoint(0.0);
 
     //HPF Env
@@ -88,6 +92,12 @@ void TextureSynthAudioProcessorEditor::resized()
     //File load button
     fileLoadButton.setBounds(10, 205, 40, 20);
     
+    //Loop controls
+    knobLoopStart.setBounds(50, 205, 50, 50);
+    knobLoopSize.setBounds(100, 205, 50, 50);
+    knobLoopStart.addListener(this);
+    knobLoopSize.addListener(this);
+    
     //Amp Env
     sliderGainEnvAtk.setBounds(425, 20, 25, 60);
     sliderGainEnvHold.setBounds(450, 20, 25, 60);
@@ -122,6 +132,13 @@ void TextureSynthAudioProcessorEditor::resized()
 void TextureSynthAudioProcessorEditor::changeListenerCallback(ChangeBroadcaster* source)
 {
     if(source == processor.getThumbnail()) repaint();
+}
+void TextureSynthAudioProcessorEditor::sliderValueChanged (Slider *slider)
+{
+    if(slider == &knobLoopSize || slider == &knobLoopStart)
+    {
+        repaint();
+    }
 }
 
 //==============================================================================
@@ -195,8 +212,30 @@ void TextureSynthAudioProcessorEditor::paintThumbnail(Graphics& g, const Rectang
         //Background
         g.setColour (Colours::black);
         g.fillRect (thumbnailBounds);
+        
         //Waveform
         g.setColour (Colours::blueviolet);
         thumbnail->drawChannels (g, thumbnailBounds, 0.0, thumbnail->getTotalLength(), 1.0f);
+        
+        //loop overlay
+        uint8 full = 255;
+        float alpha = 0.33;
+        g.setColour(Colour(full, full, full, alpha));
+        int overlayX = thumbnailBounds.getX() + thumbnailBounds.getWidth()*processor.getValueTreeState().getParameter(processor.grainParamArray[0])->getValue();
+        int overlayWidth = thumbnailBounds.getWidth()*processor.getValueTreeState().getParameter(processor.grainParamArray[1])->getValue();
+        if(overlayX + overlayWidth >= thumbnailBounds.getRight())
+        {
+            overlayWidth = thumbnailBounds.getRight() - overlayX;
+            if(overlayWidth <= 0)
+            {
+                overlayWidth = 2;
+                overlayX -= 2;
+            }
+        }
+        if(overlayWidth <= 0)
+        {
+            overlayWidth = 2;
+        }
+        g.fillRect(overlayX, thumbnailBounds.getY(), overlayWidth, thumbnailBounds.getHeight());
     }
 }

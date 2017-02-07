@@ -13,7 +13,7 @@
 
 const int TextureSynthAudioProcessor::MAXPOLYPHONY = 4;
 
-String TextureSynthAudioProcessor::grainParamArray[] = {"gsize", "gtimescale"};//, "gphasedecorrelate", "gdetune", "gcoarse", "gfine", "gstereowidth"};
+String TextureSynthAudioProcessor::grainParamArray[] = {"gloopstart", "gloopsize"};//"gsize", "gtimescale", "gphasedecorrelate", "gdetune", "gcoarse", "gfine", "gstereowidth"};
 const int TextureSynthAudioProcessor::NUMGRANULATORPARAMS = 2;
 
 String TextureSynthAudioProcessor::synthParamArray[] = {"ampenvatk", "ampenvhold", "ampenvdec", "ampenvsus", "ampenvrel", "ampgain", "hpcutoff", "hpreso", "hpenvatk", "hpenvhold", "hpenvdec", "hpenvsus", "hpenvrel", "hpdepth", "lpcutoff", "lpreso", "lpenvatk", "lpenvhold", "lpenvdec", "lpenvsus", "lpenvrel", "lpdepth"};
@@ -54,8 +54,8 @@ void TextureSynthAudioProcessor::initParams()
     std::function<String (float)> percentValueToTextFunction = [](float value){ return String(value) + "%";};
     
     //Granulator Parameters
-    mState->createAndAddParameter(grainParamArray[0], "Grain Size", " ms", NormalisableRange<float>(10, 80, 1), 40, nullptr, nullptr);
-    mState->createAndAddParameter(grainParamArray[1], "Time Scale", " %", NormalisableRange<float>(1, 50, 0.5), 12.5, nullptr, nullptr);
+    mState->createAndAddParameter(grainParamArray[0], "Loop Start", "", NormalisableRange<float>(0.0, 1.0, 0.0), 0.0, nullptr, nullptr);
+    mState->createAndAddParameter(grainParamArray[1], "Loop Size", "", NormalisableRange<float>(0.0, 1.0, 0.0), 1.0, nullptr, nullptr);
     
     //Synth Parameters
     mState->createAndAddParameter(synthParamArray[0], "Amp. Atk.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
@@ -91,17 +91,11 @@ void TextureSynthAudioProcessor::initParams()
         tempForInit->setValueNotifyingHost(tempForInit->getValue());
     }
     
-    //Attach granulator params per voice
-    for(int j = 0; j < synth.getNumVoices(); j++) //Make each synth's voice's granulator a listener
+    for(int i = 0; i < NUMGRANULATORPARAMS; i++)
     {
-        GrainSynthVoice* tempVoice = (GrainSynthVoice*)synth.getVoice(j);
-        Granulator* granulator = tempVoice->getGranulator();
-        for(int i = 0; i < NUMGRANULATORPARAMS; i++)
-        {
-            mState->addParameterListener(grainParamArray[i], granulator);
-            AudioProcessorParameter* tempForInit = mState->getParameter(grainParamArray[i]);
-            tempForInit->setValueNotifyingHost(tempForInit->getValue());
-        }
+        mState->addParameterListener(grainParamArray[i], &synth);
+        AudioProcessorParameter* tempForInit = mState->getParameter(grainParamArray[i]);
+        tempForInit->setValueNotifyingHost(tempForInit->getValue());
     }
     
 }
@@ -114,19 +108,14 @@ void TextureSynthAudioProcessor::parameterChanged(const String &parameterID, flo
 }
 TextureSynthAudioProcessor::~TextureSynthAudioProcessor()
 {
-    //Detach synth's voice's granulators from being processor state listeners
+    //Detach processor state listeners
     for(int i = 0; i < NUMSYNTHPARAMS; i++)
     {
         mState->removeParameterListener(synthParamArray[i], &synth);
     }
-    for(int j = 0; j < synth.getNumVoices(); j++)
+    for(int i = 0; i < NUMGRANULATORPARAMS; i++)
     {
-        GrainSynthVoice* tempVoice = (GrainSynthVoice*) synth.getVoice(j);
-        Granulator* granulator = tempVoice->getGranulator();
-        for(int i = 0; i < NUMGRANULATORPARAMS; i++)
-        {
-            mState->removeParameterListener(grainParamArray[i], granulator);
-        }
+        mState->removeParameterListener(grainParamArray[i], &synth);
     }
 }
 

@@ -56,14 +56,14 @@ private:
 //==============================================================================
 //Granulator
 //==============================================================================
-class Granulator : public AudioProcessorValueTreeState::Listener
+class Granulator
 {
 public:
     Granulator();
     void prepareToPlay(double sr, int samplesPerBlock);
     
     //Listener
-    void parameterChanged(const String &parameterID, float newValue) override;
+    void parameterChanged(const String &parameterID, float newValue);
     
     //SequenceStrategy
     void setTargetPitch(double pitchInHz);
@@ -91,6 +91,7 @@ private:
     //Scheduler
     int samplesTilNextGrain;
     int currentReadIndex;
+    float loopStartIndexPercent, loopLengthPercent;
     
     //Grain
     Grain grainArray[MAXGRAINPOLYPHONY];

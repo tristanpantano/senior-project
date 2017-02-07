@@ -100,7 +100,11 @@ GrainSynthVoice::GrainSynthVoice() : voiceBuffer(2, 2048)
 
 void GrainSynthVoice::parameterChanged(const String &parameterID, float newValue)
 {
-    if(parameterID == "ampenvatk")
+    if(parameterID.startsWithChar('g'))
+    {
+        granulator.parameterChanged(parameterID, newValue);
+    }
+    else if(parameterID == "ampenvatk")
     {
         ampEnv.setAttack(newValue*0.001);
     }
@@ -203,9 +207,9 @@ void GrainSynthVoice::startNote(int midiNoteNumber, float velocity, SynthesiserS
         isReleasing = false;
         timeSinceTrigger = 0.0;
         
-        granulator.retrigger();
         granulator.setSource(sound->bufferedFile, sound->sourceSampleRate, sound->defaultPitchInHz);
         granulator.setTargetPitch(MidiMessage::getMidiNoteInHertz(midiNoteNumber));
+        granulator.retrigger();
         
         leftHighpass.reset();
         rightHighpass.reset();

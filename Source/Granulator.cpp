@@ -86,7 +86,7 @@ void Grain::synthesize(AudioSampleBuffer& outputBuffer, AudioSampleBuffer* sourc
 //==============================================================================
 //Granulator
 //==============================================================================
-Granulator::Granulator() : sampleRate(44100.0), targetPitchInHz(440.0), grainSizeInSec(0.040), samplesTilNextGrain(0), currentReadIndex(0), source(nullptr) {}
+Granulator::Granulator() : sampleRate(44100.0), targetPitchInHz(440.0), grainSizeInSec(0.040), samplesTilNextGrain(0), currentReadIndex(0), loopStartIndexPercent(0.0), source(nullptr) {}
 void Granulator::prepareToPlay(double sr, int samplesPerBlock)
 {
     sampleRate = sr;
@@ -100,7 +100,14 @@ void Granulator::prepareToPlay(double sr, int samplesPerBlock)
 //Listener
 void Granulator::parameterChanged(const String &parameterID, float newValue)
 {
-    
+    if(parameterID == "gloopstart")
+    {
+        loopStartIndexPercent = newValue;
+    }
+    else if(parameterID == "gloopsize")
+    {
+        loopLengthPercent = newValue;
+    }
 }
 
 //SequenceStrategy
@@ -110,8 +117,7 @@ void Granulator::setTargetPitch(double pitchInHz)
 }
 int Granulator::nextDurationInSamples()
 {
-    //return int(grainSizeInSec*sampleRate);
-    return 0.040*sampleRate;//2*nextInteronsetInSamples();
+    return 0.040*sampleRate; //fixed 40ms duration
 }
 int Granulator::nextInteronsetInSamples()
 {
@@ -119,12 +125,25 @@ int Granulator::nextInteronsetInSamples()
 }
 void Granulator::advanceReadIndex(int samplesElapsed)
 {
-    currentReadIndex += int(samplesElapsed*getResamplingRatio());
+    if(source != nullptr)
+    {
+        currentReadIndex += int(samplesElapsed*getResamplingRatio());
+        if(currentReadIndex > (loopStartIndexPercent+loopLengthPercent)*source->getNumSamples())
+        {
+            restartReadIndex();
+        }
+    }
 }
 void Granulator::restartReadIndex()
 {
-    currentReadIndex = 0;
-    //should handle looping and an inlaid startpos...
+    if(source != nullptr)
+    {
+        currentReadIndex = loopStartIndexPercent * source->getNumSamples();
+        if(currentReadIndex > source->getNumSamples())
+        {
+            currentReadIndex = source->getNumSamples() - 1;
+        }
+    }
 }
 double Granulator::getResamplingRatio()
 {
@@ -138,7 +157,7 @@ void Granulator::retrigger()
     {
         grainArray[i].setActive(false);
     }
-    currentReadIndex = 0;
+    restartReadIndex();
 }
 void Granulator::renderNextBlock(AudioSampleBuffer& outputBuffer, int startSample, int numSamples)
 {
@@ -179,17 +198,17 @@ int Granulator::initFreeGrain()
     {
         if(!grainArray[i].isActive())
         {
-            int length = nextDurationInSamples();
-            jassert(length < source->getNumSamples());
-            int overshoot = (length+currentReadIndex) - source->getNumSamples();
+            int grainLength = nextDurationInSamples();
+            jassert(grainLength < source->getNumSamples());
+            int overshoot = (grainLength+currentReadIndex) - source->getNumSamples();
             if(overshoot > 0)
             {
-                grainArray[i].initialize(currentReadIndex-overshoot, length);
+                grainArray[i].initialize(currentReadIndex-overshoot, grainLength);
                 restartReadIndex();
             }
             else
             {
-                grainArray[i].initialize(currentReadIndex, length);
+                grainArray[i].initialize(currentReadIndex, grainLength);
             }
             
             return i;
