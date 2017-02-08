@@ -3,7 +3,7 @@
 
 const Rectangle<int> TextureSynthAudioProcessorEditor::thumbnailBounds(10, 50, 300, 150);
 
-const int TextureSynthAudioProcessorEditor::numSliders = 31; //increment by 1 for each knob/slider added
+const int TextureSynthAudioProcessorEditor::numSliders = 33; //increment by 1 for each knob/slider added
 
 //==============================================================================
 TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor& p)
@@ -32,6 +32,16 @@ TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynth
     //Tuning
     initKnob(knobCoarseTune, p.grainParamArray[3]);
     initKnob(knobFineTune, p.grainParamArray[4]);
+    initKnob(knobChaos, p.grainParamArray[7]);
+    
+    //Read Rate
+    fixedRatioToggle.setButtonText("Fixed");
+    fixedRatioToggle.setClickingTogglesState(true);
+    fixedAttach = new AudioProcessorValueTreeState::ButtonAttachment(p.getValueTreeState(), p.grainParamArray[5], fixedRatioToggle);
+    addAndMakeVisible(fixedRatioToggle);
+    p.getValueTreeState().addParameterListener(p.grainParamArray[5], this);
+    initKnob(knobReadRatio, p.grainParamArray[6]);
+    ratioKnobEnable();
     
     //Amp Env
     initSlider(sliderGainEnvAtk, p.synthParamArray[0]);
@@ -90,6 +100,8 @@ TextureSynthAudioProcessorEditor::~TextureSynthAudioProcessorEditor()
     {
         sliderAttachments[i] = nullptr;
     }
+    processor.getValueTreeState().removeParameterListener(processor.grainParamArray[5], this);
+    fixedAttach = nullptr;
 }
 
 //==============================================================================
@@ -114,6 +126,9 @@ void TextureSynthAudioProcessorEditor::resized()
     //Tuning
     knobCoarseTune.setBounds(320, 10, 33, 33);
     knobFineTune.setBounds(353, 10, 33, 33);
+    knobChaos.setBounds(330, 50, 50, 50);
+    fixedRatioToggle.setBounds(330, 100, 50, 20);
+    knobReadRatio.setBounds(330, 125, 50, 50);
     
     //Amp Env
     sliderGainEnvAtk.setBounds(425, 20, 25, 60);
@@ -165,6 +180,27 @@ void TextureSynthAudioProcessorEditor::sliderValueChanged (Slider *slider)
 }
 
 //==============================================================================
+void TextureSynthAudioProcessorEditor::parameterChanged(const String &parameterID, float newValue)
+{
+    if(parameterID == "gfixtoggle")
+    {
+        ratioKnobEnable();
+    }
+}
+void TextureSynthAudioProcessorEditor::ratioKnobEnable()
+{
+    Colour newColour;
+    if(processor.getValueTreeState().getParameter("gfixtoggle")->getValue())
+    {
+        newColour = Colours::black;
+    }
+    else
+    {
+        newColour = Colours::lightgrey;
+    }
+    knobReadRatio.setColour(Slider::rotarySliderOutlineColourId, newColour);
+    knobReadRatio.setColour(Slider::rotarySliderFillColourId, newColour);
+}
 void TextureSynthAudioProcessorEditor::buttonClicked(Button* button)
 {
     if(button == &fileLoadButton)

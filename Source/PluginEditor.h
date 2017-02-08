@@ -18,7 +18,7 @@
 //==============================================================================
 /**
 */
-class TextureSynthAudioProcessorEditor  : public AudioProcessorEditor, public Button::Listener, public ChangeListener, public Slider::Listener
+class TextureSynthAudioProcessorEditor  : public AudioProcessorEditor, public Button::Listener, public ChangeListener, public Slider::Listener, public AudioProcessorValueTreeState::Listener
 {
 public:
     TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor&);
@@ -39,6 +39,10 @@ public:
     //Slider Listener
     void sliderValueChanged (Slider *slider) override;
     
+    //Param listener
+    void parameterChanged(const String &parameterID, float newValue) override;
+    void ratioKnobEnable();
+    
     //Bound rectangles
     static const Rectangle<int> thumbnailBounds;
 
@@ -48,6 +52,8 @@ public:
 private:
     //Buttons
     TextButton fileLoadButton;
+    TextButton fixedRatioToggle;
+    ScopedPointer<AudioProcessorValueTreeState::ButtonAttachment> fixedAttach;
     void loadButtonClicked();
     
     //Sliders
@@ -61,7 +67,7 @@ private:
     //Knobs
     void initKnob(Slider& knob, const String parameterID);
     Slider knobLoopStart, knobLoopSize, knobGrainSize;
-    Slider knobCoarseTune, knobFineTune;
+    Slider knobCoarseTune, knobFineTune, knobReadRatio, knobChaos;
     Slider knobGain, knobHpCutoff, knobHpReso, knobLpCutoff, knobLpReso;
     Slider knobVerbDryWet, knobVerbSize, knobVerbDamp, knobVerbWidth;
     

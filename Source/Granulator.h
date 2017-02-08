@@ -13,6 +13,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include <algorithm>
+#include <random>
 
 const int MAXGRAINPOLYPHONY = 128;
 
@@ -93,6 +94,15 @@ private:
     double semiTranspose;
     double centTranspose;
     double grainSizeInSec;
+    bool useFixedRatio;
+    double fixedRatio;
+    double chaosPercent;
+    int numRepetitions, currentRepetition;
+    
+    //Chaos
+    std::random_device rd;
+    std::mt19937 gen;
+    std::uniform_int_distribution<int> chaosDist;
     
     //Scheduler
     int samplesTilNextGrain;

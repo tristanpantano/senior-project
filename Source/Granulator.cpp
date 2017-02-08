@@ -89,7 +89,7 @@ void Grain::synthesize(AudioSampleBuffer& outputBuffer, AudioSampleBuffer* sourc
 //==============================================================================
 //Granulator
 //==============================================================================
-Granulator::Granulator() : sampleRate(44100.0), basePitchInHz(440.0), semiTranspose(0.0), centTranspose(0.0), grainSizeInSec(0.040), samplesTilNextGrain(0), currentReadIndex(0), loopStartIndexPercent(0.0), source(nullptr) {}
+Granulator::Granulator() : sampleRate(44100.0), basePitchInHz(440.0), semiTranspose(0.0), centTranspose(0.0), grainSizeInSec(0.040), useFixedRatio(false), fixedRatio(1.0), chaosPercent(0.0), numRepetitions(0), currentRepetition(0), gen(rd()), chaosDist(0, 201), samplesTilNextGrain(0), currentReadIndex(0), loopStartIndexPercent(0.0), source(nullptr) {}
 void Granulator::prepareToPlay(double sr, int samplesPerBlock)
 {
     sampleRate = sr;
@@ -124,6 +124,23 @@ void Granulator::parameterChanged(const String &parameterID, float newValue)
     {
         centTranspose = newValue;
     }
+    else if(parameterID == "gfixtoggle")
+    {
+        useFixedRatio = (bool)newValue;
+    }
+    else if(parameterID == "gfixed")
+    {
+        fixedRatio = newValue/100.0;
+    }
+    else if(parameterID == "gchaos")
+    {
+        chaosPercent = newValue/100.0;
+    }
+    else if(parameterID == "grepeat")
+    {
+        numRepetitions = newValue;
+        currentRepetition = newValue;
+    }
 }
 
 //SequenceStrategy
@@ -133,7 +150,8 @@ void Granulator::setBasePitch(double pitchInHz)
 }
 double Granulator::getTargetPitch()
 {
-    double detuneCoefficient = pow(2, (centTranspose + semiTranspose*100.0)/1200.0);
+    double randomCents = chaosDist(gen)*chaosPercent - 100.0;
+    double detuneCoefficient = pow(2, (randomCents + centTranspose + semiTranspose*100.0)/1200.0);
     return basePitchInHz * detuneCoefficient;
 }
 int Granulator::nextDurationInSamples()
@@ -146,6 +164,16 @@ int Granulator::nextInteronsetInSamples()
 }
 void Granulator::advanceReadIndex(int samplesElapsed)
 {
+    if(currentRepetition >= 0)
+    {
+        currentRepetition--;
+        return;
+    }
+    else
+    {
+        currentRepetition = numRepetitions;
+    }
+    
     if(source != nullptr)
     {
         currentReadIndex += int(samplesElapsed*getResamplingRatio());
@@ -168,7 +196,11 @@ void Granulator::restartReadIndex()
 }
 double Granulator::getResamplingRatio()
 {
-    return (sampleRate/sourceSampleRate)*(getTargetPitch()/sourcePitchInHz);
+    if(useFixedRatio){return fixedRatio;}
+    else
+    {
+        return (sampleRate/sourceSampleRate)*(getTargetPitch()/sourcePitchInHz);
+    }
 }
 
 //Scheduler

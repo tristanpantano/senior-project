@@ -13,8 +13,8 @@
 
 const int TextureSynthAudioProcessor::MAXPOLYPHONY = 4;
 
-String TextureSynthAudioProcessor::grainParamArray[] = {"gloopstart", "gloopsize", "gsize", "gsemitones", "gcents"}; //"gtimescale", "gphasedecorrelate", "gdetune", "gcoarse", "gfine", "gstereowidth"};
-const int TextureSynthAudioProcessor::NUMGRANULATORPARAMS = 5;
+String TextureSynthAudioProcessor::grainParamArray[] = {"gloopstart", "gloopsize", "gsize", "gsemitones", "gcents", "gfixtoggle", "gfixed", "gchaos", "grepeat"}; // "gphasedecorrelate", "gstereowidth"};
+const int TextureSynthAudioProcessor::NUMGRANULATORPARAMS = 9;
 
 String TextureSynthAudioProcessor::synthParamArray[] = {"ampenvatk", "ampenvhold", "ampenvdec", "ampenvsus", "ampenvrel", "ampgain", "hpcutoff", "hpreso", "hpenvatk", "hpenvhold", "hpenvdec", "hpenvsus", "hpenvrel", "hpdepth", "lpcutoff", "lpreso", "lpenvatk", "lpenvhold", "lpenvdec", "lpenvsus", "lpenvrel", "lpdepth"};
 const int TextureSynthAudioProcessor::NUMSYNTHPARAMS = 22;
@@ -63,6 +63,10 @@ void TextureSynthAudioProcessor::initParams()
     mState->createAndAddParameter(grainParamArray[2], "Grain Size", " ms", NormalisableRange<float>(Grain::MINGRAINSIZEINMS, Grain::MAXGRAINSIZEINMS, 1.0), 40.0, nullptr, nullptr);
     mState->createAndAddParameter(grainParamArray[3], "Coarse Tune", " st", NormalisableRange<float>(-12.0, 12.0, 1.0), 0.0, nullptr, nullptr);
     mState->createAndAddParameter(grainParamArray[4], "Fine Tune", " cents", NormalisableRange<float>(-100.0, 100.0, 1.0), 0.0, nullptr, nullptr);
+    mState->createAndAddParameter(grainParamArray[5], "Fixed Toggle", "", NormalisableRange<float>(0.0, 1.0, 1.0), 0.0, nullptr, nullptr);
+    mState->createAndAddParameter(grainParamArray[6], "Read Rate", " %", NormalisableRange<float>(0.0, 200.0, 1.0, getSkewFromMidpoint(0.0, 200.0, 50.0)), 100.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(grainParamArray[7], "Chaos", " %", NormalisableRange<float>(0.0, 100.0, 1.0), 0.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(grainParamArray[8], "Grain Repeat", "", NormalisableRange<float>(0.0, 16.0, 1.0), 0.0, nullptr, nullptr);
     
     //Synth Parameters
     mState->createAndAddParameter(synthParamArray[0], "Amp. Atk.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
