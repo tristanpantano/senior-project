@@ -13,7 +13,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginProcessor.h"
-
+#include "TexImgBin.h"
 
 //==============================================================================
 /**
@@ -73,6 +73,9 @@ private:
     
     //Thumbnail
     void paintThumbnail(Graphics& g, const Rectangle<int> thumbnailBounds);
+    
+    //Images
+    Image cachedImage_tempBG_png;
     
     
     // This reference is provided as a quick way for your editor to

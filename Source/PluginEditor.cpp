@@ -9,6 +9,10 @@ const int TextureSynthAudioProcessorEditor::numSliders = 34; //increment by 1 fo
 TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor& p)
     : AudioProcessorEditor (&p), processor (p)
 {
+    //load images
+    cachedImage_tempBG_png = ImageFileFormat::loadFrom(TexImgBin::tempBG_png, TexImgBin::tempBG_pngSize);
+    ImageCache::addImageToCache(cachedImage_tempBG_png, 0);
+    
     //constants
     const double hzSkew = TextureSynthAudioProcessor::getSkewFromMidpoint(20.0, 20000.0, 2000.0);
     
@@ -110,7 +114,8 @@ TextureSynthAudioProcessorEditor::~TextureSynthAudioProcessorEditor()
 //==============================================================================
 void TextureSynthAudioProcessorEditor::paint (Graphics& g)
 {
-    g.fillAll (Colours::white);
+    Image bgImg = ImageCache::getFromHashCode(0);
+    g.drawImage(bgImg, 0, 0, getWidth(), getHeight(), 0, 0, bgImg.getWidth(), bgImg.getHeight());
     
     //Thumbnail painting
     paintThumbnail(g, thumbnailBounds);
