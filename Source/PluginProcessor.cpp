@@ -66,7 +66,7 @@ void TextureSynthAudioProcessor::initParams()
     mState->createAndAddParameter(grainParamArray[5], "Fixed Toggle", "", NormalisableRange<float>(0.0, 1.0, 1.0), 0.0, nullptr, nullptr);
     mState->createAndAddParameter(grainParamArray[6], "Read Rate", " %", NormalisableRange<float>(0.0, 200.0, 1.0, getSkewFromMidpoint(0.0, 200.0, 50.0)), 100.0, percentValueToTextFunction, nullptr);
     mState->createAndAddParameter(grainParamArray[7], "Chaos", " %", NormalisableRange<float>(0.0, 100.0, 1.0), 0.0, percentValueToTextFunction, nullptr);
-    mState->createAndAddParameter(grainParamArray[8], "Grain Repeat", "", NormalisableRange<float>(0.0, 16.0, 1.0), 0.0, nullptr, nullptr);
+    mState->createAndAddParameter(grainParamArray[8], "Grain Repeat", "", NormalisableRange<float>(0.0, 32.0, 1.0), 0.0, nullptr, nullptr);
     
     //Synth Parameters
     mState->createAndAddParameter(synthParamArray[0], "Amp. Atk.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);

@@ -3,7 +3,7 @@
 
 const Rectangle<int> TextureSynthAudioProcessorEditor::thumbnailBounds(10, 50, 300, 150);
 
-const int TextureSynthAudioProcessorEditor::numSliders = 33; //increment by 1 for each knob/slider added
+const int TextureSynthAudioProcessorEditor::numSliders = 34; //increment by 1 for each knob/slider added
 
 //==============================================================================
 TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor& p)
@@ -26,6 +26,8 @@ TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynth
     initKnob(knobLoopSize, p.grainParamArray[1]);
     initKnob(knobGrainSize, p.grainParamArray[2]);
     knobLoopSize.setSkewFactorFromMidPoint(0.25);
+    knobLoopStart.setPopupDisplayEnabled(false, this);
+    knobLoopSize.setPopupDisplayEnabled(false, this);
     knobLoopStart.addListener(this);
     knobLoopSize.addListener(this);
     
@@ -33,6 +35,7 @@ TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynth
     initKnob(knobCoarseTune, p.grainParamArray[3]);
     initKnob(knobFineTune, p.grainParamArray[4]);
     initKnob(knobChaos, p.grainParamArray[7]);
+    initKnob(knobRepetitions, p.grainParamArray[8]);
     
     //Read Rate
     fixedRatioToggle.setButtonText("Fixed");
@@ -91,7 +94,7 @@ TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynth
     processor.getThumbnail()->addChangeListener(this);
     
     //set size at the end
-    setSize(800, 300);
+    setSize(700, 300);
 }
 
 TextureSynthAudioProcessorEditor::~TextureSynthAudioProcessorEditor()
@@ -124,11 +127,12 @@ void TextureSynthAudioProcessorEditor::resized()
     knobGrainSize.setBounds(200, 205, 50, 50);
     
     //Tuning
-    knobCoarseTune.setBounds(320, 10, 33, 33);
-    knobFineTune.setBounds(353, 10, 33, 33);
-    knobChaos.setBounds(330, 50, 50, 50);
-    fixedRatioToggle.setBounds(330, 100, 50, 20);
-    knobReadRatio.setBounds(330, 125, 50, 50);
+    knobRepetitions.setBounds(330, 25, 50, 50);
+    knobReadRatio.setBounds(330, 90, 50, 50);
+    fixedRatioToggle.setBounds(330, 150, 50, 20);
+    knobChaos.setBounds(330, 180, 50, 50);
+    knobCoarseTune.setBounds(320, 245, 33, 33);
+    knobFineTune.setBounds(355, 245, 33, 33);
     
     //Amp Env
     sliderGainEnvAtk.setBounds(425, 20, 25, 60);
@@ -139,31 +143,31 @@ void TextureSynthAudioProcessorEditor::resized()
     knobGain.setBounds(550, 20, 50, 60);
     
     //HPF Env
-    sliderHpfEnvAtk.setBounds(425, 120, 25, 60);
-    sliderHpfEnvHold.setBounds(450, 120, 25, 60);
-    sliderHpfEnvDec.setBounds(475, 120, 25, 60);
-    sliderHpfEnvSus.setBounds(500, 120, 25, 60);
-    sliderHpfEnvRel.setBounds(525, 120, 25, 60);
-    sliderHpfDepth.setBounds(550, 120, 25, 60);
-    knobHpCutoff.setBounds(575, 125, 25, 25);
-    knobHpReso.setBounds(575, 150, 25, 25);
+    sliderHpfEnvAtk.setBounds(425, 115, 25, 60);
+    sliderHpfEnvHold.setBounds(450, 115, 25, 60);
+    sliderHpfEnvDec.setBounds(475, 115, 25, 60);
+    sliderHpfEnvSus.setBounds(500, 115, 25, 60);
+    sliderHpfEnvRel.setBounds(525, 115, 25, 60);
+    sliderHpfDepth.setBounds(550, 115, 25, 60);
+    knobHpCutoff.setBounds(575, 120, 25, 25);
+    knobHpReso.setBounds(575, 145, 25, 25);
     
     //LPF Env
-    sliderLpfEnvAtk.setBounds(425, 220, 25, 60);
-    sliderLpfEnvHold.setBounds(450, 220, 25, 60);
-    sliderLpfEnvDec.setBounds(475, 220, 25, 60);
-    sliderLpfEnvSus.setBounds(500, 220, 25, 60);
-    sliderLpfEnvRel.setBounds(525, 220, 25, 60);
-    sliderLpfDepth.setBounds(550, 220, 25, 60);
-    knobLpCutoff.setBounds(575, 225, 25, 25);
-    knobLpReso.setBounds(575, 250, 25, 25);
+    sliderLpfEnvAtk.setBounds(425, 210, 25, 60);
+    sliderLpfEnvHold.setBounds(450, 210, 25, 60);
+    sliderLpfEnvDec.setBounds(475, 210, 25, 60);
+    sliderLpfEnvSus.setBounds(500, 210, 25, 60);
+    sliderLpfEnvRel.setBounds(525, 210, 25, 60);
+    sliderLpfDepth.setBounds(550, 210, 25, 60);
+    knobLpCutoff.setBounds(575, 215, 25, 25);
+    knobLpReso.setBounds(575, 240, 25, 25);
     
     
     //ShimmerVerb
-    knobVerbSize.setBounds(700, 100, 50, 50);
-    knobVerbDamp.setBounds(700, 150, 50, 50);
-    knobVerbWidth.setBounds(700, 200, 50, 50);
-    knobVerbDryWet.setBounds(700, 250, 50, 50);
+    knobVerbSize.setBounds(625, 25, 50, 50);
+    knobVerbDamp.setBounds(625, 90, 50, 50);
+    knobVerbWidth.setBounds(625, 155, 50, 50);
+    knobVerbDryWet.setBounds(625, 220, 50, 50);
 }
 
 //==============================================================================

@@ -13,6 +13,8 @@
               companyName="Tristan Pantano">
   <MAINGROUP id="xfhFvq" name="TextureSynth">
     <GROUP id="{84ADEABB-588F-5449-50DD-F3CB8BE5CCB1}" name="Source">
+      <FILE id="FDJ5h8" name="Envelope.cpp" compile="1" resource="0" file="Source/Envelope.cpp"/>
+      <FILE id="dEibAO" name="Envelope.h" compile="0" resource="0" file="Source/Envelope.h"/>
       <FILE id="LyLhDc" name="dRowAudio.cpp" compile="1" resource="0" file="../../../../../../../Macintosh HD/Applications/JUCE/modules/drowaudio/dRowAudio.cpp"/>
       <FILE id="yc8HtN" name="dRowAudio.h" compile="0" resource="0" file="../../../../../../../Macintosh HD/Applications/JUCE/modules/drowaudio/dRowAudio.h"/>
       <FILE id="tHjzdy" name="dRowAudio.mm" compile="1" resource="0" file="../../../../../../../Macintosh HD/Applications/JUCE/modules/drowaudio/dRowAudio.mm"/>
