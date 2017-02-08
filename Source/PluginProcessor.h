@@ -12,6 +12,7 @@
 #define PLUGINPROCESSOR_H_INCLUDED
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "Granulator.h"
 #include "GrainSynth.h"
 #include "ShimmerVerb.h"
 

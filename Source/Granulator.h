@@ -46,6 +46,9 @@ public:
     void setEnvelopePtr(GrainEnvelope* env){ envelope = env; }
     void setActive(bool isActive){ active = isActive; }
     
+    static const int MINGRAINSIZEINMS;
+    static const int MAXGRAINSIZEINMS;
+    
 private:
     bool active;
     int startIndexInSource, sampleLength, posInGrain;
@@ -66,7 +69,8 @@ public:
     void parameterChanged(const String &parameterID, float newValue);
     
     //SequenceStrategy
-    void setTargetPitch(double pitchInHz);
+    void setBasePitch(double pitchInHz);
+    double getTargetPitch();
     int nextDurationInSamples();
     int nextInteronsetInSamples();
     void advanceReadIndex(int samplesElapsed);
@@ -85,7 +89,9 @@ private:
     double sampleRate; //for output buffer
     
     //SequenceStrategy
-    double targetPitchInHz;
+    double basePitchInHz;
+    double semiTranspose;
+    double centTranspose;
     double grainSizeInSec;
     
     //Scheduler

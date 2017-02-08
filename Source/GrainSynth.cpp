@@ -208,7 +208,7 @@ void GrainSynthVoice::startNote(int midiNoteNumber, float velocity, SynthesiserS
         timeSinceTrigger = 0.0;
         
         granulator.setSource(sound->bufferedFile, sound->sourceSampleRate, sound->defaultPitchInHz);
-        granulator.setTargetPitch(MidiMessage::getMidiNoteInHertz(midiNoteNumber));
+        granulator.setBasePitch(MidiMessage::getMidiNoteInHertz(midiNoteNumber));
         granulator.retrigger();
         
         leftHighpass.reset();

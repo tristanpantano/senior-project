@@ -10,6 +10,9 @@
 
 #include "Granulator.h"
 
+const int Grain::MINGRAINSIZEINMS = 20;
+const int Grain::MAXGRAINSIZEINMS = 400;
+
 GrainEnvelope::GrainEnvelope() : initialized(false){}
 
 void GrainEnvelope::initialize(double fadeInSec, double sampleRate)
@@ -86,11 +89,11 @@ void Grain::synthesize(AudioSampleBuffer& outputBuffer, AudioSampleBuffer* sourc
 //==============================================================================
 //Granulator
 //==============================================================================
-Granulator::Granulator() : sampleRate(44100.0), targetPitchInHz(440.0), grainSizeInSec(0.040), samplesTilNextGrain(0), currentReadIndex(0), loopStartIndexPercent(0.0), source(nullptr) {}
+Granulator::Granulator() : sampleRate(44100.0), basePitchInHz(440.0), semiTranspose(0.0), centTranspose(0.0), grainSizeInSec(0.040), samplesTilNextGrain(0), currentReadIndex(0), loopStartIndexPercent(0.0), source(nullptr) {}
 void Granulator::prepareToPlay(double sr, int samplesPerBlock)
 {
     sampleRate = sr;
-    grainEnvelope.initialize(0.005, sr); //5 ms fade each end
+    grainEnvelope.initialize(0.010, sr); //10 ms fade each end
     for(int i = 0; i < MAXGRAINPOLYPHONY; i++)
     {
         grainArray[i].setEnvelopePtr(&grainEnvelope);
@@ -103,25 +106,43 @@ void Granulator::parameterChanged(const String &parameterID, float newValue)
     if(parameterID == "gloopstart")
     {
         loopStartIndexPercent = newValue;
+        restartReadIndex();
     }
     else if(parameterID == "gloopsize")
     {
         loopLengthPercent = newValue;
     }
+    else if(parameterID == "gsize")
+    {
+        grainSizeInSec = newValue/1000.0;
+    }
+    else if(parameterID == "gsemitones")
+    {
+        semiTranspose = newValue;
+    }
+    else if(parameterID == "gcents")
+    {
+        centTranspose = newValue;
+    }
 }
 
 //SequenceStrategy
-void Granulator::setTargetPitch(double pitchInHz)
+void Granulator::setBasePitch(double pitchInHz)
 {
-    targetPitchInHz = pitchInHz;
+    basePitchInHz = pitchInHz;
+}
+double Granulator::getTargetPitch()
+{
+    double detuneCoefficient = pow(2, (centTranspose + semiTranspose*100.0)/1200.0);
+    return basePitchInHz * detuneCoefficient;
 }
 int Granulator::nextDurationInSamples()
 {
-    return 0.040*sampleRate; //fixed 40ms duration
+    return grainSizeInSec*sampleRate; //fixed 40ms duration
 }
 int Granulator::nextInteronsetInSamples()
 {
-    return int((1.0/targetPitchInHz)*sampleRate);
+    return int((1.0/getTargetPitch())*sampleRate);
 }
 void Granulator::advanceReadIndex(int samplesElapsed)
 {
@@ -147,7 +168,7 @@ void Granulator::restartReadIndex()
 }
 double Granulator::getResamplingRatio()
 {
-    return (sampleRate/sourceSampleRate)*(targetPitchInHz/sourcePitchInHz);
+    return (sampleRate/sourceSampleRate)*(getTargetPitch()/sourcePitchInHz);
 }
 
 //Scheduler

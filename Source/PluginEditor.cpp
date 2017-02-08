@@ -3,7 +3,7 @@
 
 const Rectangle<int> TextureSynthAudioProcessorEditor::thumbnailBounds(10, 50, 300, 150);
 
-const int TextureSynthAudioProcessorEditor::numSliders = 28;
+const int TextureSynthAudioProcessorEditor::numSliders = 31; //increment by 1 for each knob/slider added
 
 //==============================================================================
 TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynthAudioProcessor& p)
@@ -24,7 +24,14 @@ TextureSynthAudioProcessorEditor::TextureSynthAudioProcessorEditor (TextureSynth
     //Loop controls
     initKnob(knobLoopStart, p.grainParamArray[0]);
     initKnob(knobLoopSize, p.grainParamArray[1]);
+    initKnob(knobGrainSize, p.grainParamArray[2]);
     knobLoopSize.setSkewFactorFromMidPoint(0.25);
+    knobLoopStart.addListener(this);
+    knobLoopSize.addListener(this);
+    
+    //Tuning
+    initKnob(knobCoarseTune, p.grainParamArray[3]);
+    initKnob(knobFineTune, p.grainParamArray[4]);
     
     //Amp Env
     initSlider(sliderGainEnvAtk, p.synthParamArray[0]);
@@ -100,10 +107,13 @@ void TextureSynthAudioProcessorEditor::resized()
     fileLoadButton.setBounds(10, 205, 40, 20);
     
     //Loop controls
-    knobLoopStart.setBounds(50, 205, 50, 50);
-    knobLoopSize.setBounds(100, 205, 50, 50);
-    knobLoopStart.addListener(this);
-    knobLoopSize.addListener(this);
+    knobLoopStart.setBounds(75, 205, 50, 50);
+    knobLoopSize.setBounds(125, 205, 50, 50);
+    knobGrainSize.setBounds(200, 205, 50, 50);
+    
+    //Tuning
+    knobCoarseTune.setBounds(320, 10, 33, 33);
+    knobFineTune.setBounds(353, 10, 33, 33);
     
     //Amp Env
     sliderGainEnvAtk.setBounds(425, 20, 25, 60);
@@ -182,6 +192,7 @@ void TextureSynthAudioProcessorEditor::initSlider(Slider &slider, const String p
     slider.setSliderSnapsToMousePosition(false);
     slider.setMouseDragSensitivity(100);
     slider.setTextBoxStyle(Slider::NoTextBox, false, 90, 0);
+    slider.setTextValueSuffix(processor.getValueTreeState().getParameter(parameterID)->getLabel());
     slider.setPopupDisplayEnabled(true, this);
     
     sliderAttachments[sliderAttachIndex] = new AudioProcessorValueTreeState::SliderAttachment(processor.getValueTreeState(), parameterID, slider);
@@ -201,6 +212,7 @@ void TextureSynthAudioProcessorEditor::initKnob(Slider& knob, const String param
     knob.setColour(Slider::rotarySliderOutlineColourId, Colour(0,0,0));
     knob.setColour(Slider::rotarySliderFillColourId, Colour(0,0,0));
     knob.setTextBoxStyle(Slider::NoTextBox, false, 90, 0);
+    knob.setTextValueSuffix(processor.getValueTreeState().getParameter(parameterID)->getLabel());
     knob.setPopupDisplayEnabled(true, this);
     
     sliderAttachments[sliderAttachIndex] = new AudioProcessorValueTreeState::SliderAttachment(processor.getValueTreeState(), parameterID, knob);

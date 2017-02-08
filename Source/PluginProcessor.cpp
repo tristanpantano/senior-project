@@ -13,8 +13,8 @@
 
 const int TextureSynthAudioProcessor::MAXPOLYPHONY = 4;
 
-String TextureSynthAudioProcessor::grainParamArray[] = {"gloopstart", "gloopsize"};//"gsize", "gtimescale", "gphasedecorrelate", "gdetune", "gcoarse", "gfine", "gstereowidth"};
-const int TextureSynthAudioProcessor::NUMGRANULATORPARAMS = 2;
+String TextureSynthAudioProcessor::grainParamArray[] = {"gloopstart", "gloopsize", "gsize", "gsemitones", "gcents"}; //"gtimescale", "gphasedecorrelate", "gdetune", "gcoarse", "gfine", "gstereowidth"};
+const int TextureSynthAudioProcessor::NUMGRANULATORPARAMS = 5;
 
 String TextureSynthAudioProcessor::synthParamArray[] = {"ampenvatk", "ampenvhold", "ampenvdec", "ampenvsus", "ampenvrel", "ampgain", "hpcutoff", "hpreso", "hpenvatk", "hpenvhold", "hpenvdec", "hpenvsus", "hpenvrel", "hpdepth", "lpcutoff", "lpreso", "lpenvatk", "lpenvhold", "lpenvdec", "lpenvsus", "lpenvrel", "lpdepth"};
 const int TextureSynthAudioProcessor::NUMSYNTHPARAMS = 22;
@@ -50,6 +50,7 @@ void TextureSynthAudioProcessor::initParams()
     NormalisableRange<float> hzRange(20.0, 20000.0, 0.0, getSkewFromMidpoint(20.0, 20000.0, 632.46));
     NormalisableRange<float> qRange(0.10, 18.0, 0.0, getSkewFromMidpoint(0.10, 18.0, 1.34));
     NormalisableRange<float> envTimeRange(0.0, 15000.0, 0.0, getSkewFromMidpoint(0.0, 15000.0, 1000.0));
+    NormalisableRange<float> relTimeRange(6.0, 15000.0, 0.0, getSkewFromMidpoint(6.0, 15000.0, 1000.0));
     
     std::function<String (float)> dbValueToTextFunction = [](float value){ return Decibels::toString(value) + " dB"; };
     std::function<String (float)> hzValueToTextFunction = [](float value){ return String(value) + " hz";};
@@ -59,13 +60,16 @@ void TextureSynthAudioProcessor::initParams()
     //Granulator Parameters
     mState->createAndAddParameter(grainParamArray[0], "Loop Start", "", NormalisableRange<float>(0.0, 1.0, 0.0), 0.0, nullptr, nullptr);
     mState->createAndAddParameter(grainParamArray[1], "Loop Size", "", NormalisableRange<float>(0.0, 1.0, 0.0, getSkewFromMidpoint(0.0, 1.0, 0.25)), 1.0, nullptr, nullptr);
+    mState->createAndAddParameter(grainParamArray[2], "Grain Size", " ms", NormalisableRange<float>(Grain::MINGRAINSIZEINMS, Grain::MAXGRAINSIZEINMS, 1.0), 40.0, nullptr, nullptr);
+    mState->createAndAddParameter(grainParamArray[3], "Coarse Tune", " st", NormalisableRange<float>(-12.0, 12.0, 1.0), 0.0, nullptr, nullptr);
+    mState->createAndAddParameter(grainParamArray[4], "Fine Tune", " cents", NormalisableRange<float>(-100.0, 100.0, 1.0), 0.0, nullptr, nullptr);
     
     //Synth Parameters
     mState->createAndAddParameter(synthParamArray[0], "Amp. Atk.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[1], "Amp. Hold", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[2], "Amp. Dec.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[3], "Amp. Sus.", " %", NormalisableRange<float>(0.0, 100.0, 1.0), 100.0, percentValueToTextFunction, nullptr);
-    mState->createAndAddParameter(synthParamArray[4], "Amp. Rel.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[4], "Amp. Rel.", " ms", relTimeRange, 6.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[5], "Amp. Gain", " dB", dBRange, 0.0, dbValueToTextFunction, nullptr);
     
     mState->createAndAddParameter(synthParamArray[6], "HPF Cutoff", " hz", hzRange, 20.0, hzValueToTextFunction, nullptr);
@@ -74,7 +78,7 @@ void TextureSynthAudioProcessor::initParams()
     mState->createAndAddParameter(synthParamArray[9], "HPF Hold", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[10], "HPF Dec.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[11], "HPF Sus.", " %", NormalisableRange<float>(0.0, 100.0, 1.0), 100.0, percentValueToTextFunction, nullptr);
-    mState->createAndAddParameter(synthParamArray[12], "HPF Rel.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[12], "HPF Rel.", " ms", relTimeRange, 6.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[13], "HPF Depth", " hz", NormalisableRange<float>(-20000.0, 20000.0, 1.0, depthSkew, true), 0.0, hzValueToTextFunction, nullptr);
     
     mState->createAndAddParameter(synthParamArray[14], "LPF Cutoff", " hz", hzRange, 20000.0, hzValueToTextFunction, nullptr);
@@ -83,14 +87,14 @@ void TextureSynthAudioProcessor::initParams()
     mState->createAndAddParameter(synthParamArray[17], "LPF Hold", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[18], "LPF Dec.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[19], "LPF Sus.", " %", NormalisableRange<float>(0.0, 100.0, 1.0), 100.0, percentValueToTextFunction, nullptr);
-    mState->createAndAddParameter(synthParamArray[20], "LPF Rel.", " ms", envTimeRange, 0.0, msValueToTextFunction, nullptr);
+    mState->createAndAddParameter(synthParamArray[20], "LPF Rel.", " ms", relTimeRange, 6.0, msValueToTextFunction, nullptr);
     mState->createAndAddParameter(synthParamArray[21], "LPF Depth", " hz", NormalisableRange<float>(-20000.0, 20000.0, 1.0, depthSkew, true), 0.0, hzValueToTextFunction, nullptr);
     
     //ShimmerVerb Parameters
-    mState->createAndAddParameter(verbParamArray[0], "Rvb Dry/Wet", " %", NormalisableRange<float>(0, 100.0, 1.0), 13.0, percentValueToTextFunction, nullptr);
-    mState->createAndAddParameter(verbParamArray[1], "Rvb Size", " %", NormalisableRange<float>(0, 100.0, 1.0), 25.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(verbParamArray[0], "Rvb Dry/Wet", " %", NormalisableRange<float>(0, 100.0, 1.0), 10.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(verbParamArray[1], "Rvb Size", " %", NormalisableRange<float>(0, 100.0, 1.0), 50.0, percentValueToTextFunction, nullptr);
     mState->createAndAddParameter(verbParamArray[2], "Rvb Damping", " %", NormalisableRange<float>(0, 100.0, 1.0), 33.0, percentValueToTextFunction, nullptr);
-    mState->createAndAddParameter(verbParamArray[3], "Rvb Width", " %", NormalisableRange<float>(0, 100.0, 1.0), 25.0, percentValueToTextFunction, nullptr);
+    mState->createAndAddParameter(verbParamArray[3], "Rvb Width", " %", NormalisableRange<float>(0, 100.0, 1.0), 50.0, percentValueToTextFunction, nullptr);
     
     //Attach synth params
     for(int i = 0; i < NUMSYNTHPARAMS; i++)

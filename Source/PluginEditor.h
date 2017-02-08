@@ -60,7 +60,8 @@ private:
     
     //Knobs
     void initKnob(Slider& knob, const String parameterID);
-    Slider knobLoopStart, knobLoopSize;
+    Slider knobLoopStart, knobLoopSize, knobGrainSize;
+    Slider knobCoarseTune, knobFineTune;
     Slider knobGain, knobHpCutoff, knobHpReso, knobLpCutoff, knobLpReso;
     Slider knobVerbDryWet, knobVerbSize, knobVerbDamp, knobVerbWidth;
     
