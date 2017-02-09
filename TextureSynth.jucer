@@ -13,6 +13,8 @@
               companyName="Tristan Pantano">
   <MAINGROUP id="xfhFvq" name="TextureSynth">
     <GROUP id="{84ADEABB-588F-5449-50DD-F3CB8BE5CCB1}" name="Source">
+      <FILE id="Ic1gem" name="TexImgBin.h" compile="0" resource="0" file="Source/TexImgBin.h"/>
+      <FILE id="pbRmhZ" name="TexImgBin.cpp" compile="1" resource="0" file="Source/TexImgBin.cpp"/>
       <FILE id="FDJ5h8" name="Envelope.cpp" compile="1" resource="0" file="Source/Envelope.cpp"/>
       <FILE id="dEibAO" name="Envelope.h" compile="0" resource="0" file="Source/Envelope.h"/>
       <FILE id="LyLhDc" name="dRowAudio.cpp" compile="1" resource="0" file="../../../../../../../Macintosh HD/Applications/JUCE/modules/drowaudio/dRowAudio.cpp"/>
@@ -22,6 +24,8 @@
       <FILE id="c135YF" name="Granulator.h" compile="0" resource="0" file="Source/Granulator.h"/>
       <FILE id="KHhjOH" name="GrainSynth.cpp" compile="1" resource="0" file="Source/GrainSynth.cpp"/>
       <FILE id="nYZavq" name="GrainSynth.h" compile="0" resource="0" file="Source/GrainSynth.h"/>
+      <FILE id="IMR5pN" name="ShimmerVerb.cpp" compile="1" resource="0" file="Source/ShimmerVerb.cpp"/>
+      <FILE id="dkTlq9" name="ShimmerVerb.h" compile="0" resource="0" file="Source/ShimmerVerb.h"/>
       <FILE id="GC5LPB" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="qVfzT1" name="PluginProcessor.h" compile="0" resource="0"
@@ -34,8 +38,12 @@
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="TextureSynth"/>
-        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="TextureSynth"/>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="3" targetName="TextureSynth"
+                       osxArchitecture="64BitUniversal" osxCompatibility="10.7 SDK"
+                       cppLibType="libc++"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="TextureSynth"
+                       osxCompatibility="10.7 SDK" osxArchitecture="64BitUniversal"
+                       cppLibType="libc++"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../../../../../../../../Applications/JUCE/modules"/>

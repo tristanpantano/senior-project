@@ -147,25 +147,25 @@ void TextureSynthAudioProcessorEditor::resized()
     sliderGainEnvRel.setBounds(525, 20, 25, 60);
     knobGain.setBounds(550, 20, 50, 60);
     
-    //HPF Env
-    sliderHpfEnvAtk.setBounds(425, 115, 25, 60);
-    sliderHpfEnvHold.setBounds(450, 115, 25, 60);
-    sliderHpfEnvDec.setBounds(475, 115, 25, 60);
-    sliderHpfEnvSus.setBounds(500, 115, 25, 60);
-    sliderHpfEnvRel.setBounds(525, 115, 25, 60);
-    sliderHpfDepth.setBounds(550, 115, 25, 60);
-    knobHpCutoff.setBounds(575, 120, 25, 25);
-    knobHpReso.setBounds(575, 145, 25, 25);
+    //Lpf Env
+    sliderLpfEnvAtk.setBounds(425, 115, 25, 60);
+    sliderLpfEnvHold.setBounds(450, 115, 25, 60);
+    sliderLpfEnvDec.setBounds(475, 115, 25, 60);
+    sliderLpfEnvSus.setBounds(500, 115, 25, 60);
+    sliderLpfEnvRel.setBounds(525, 115, 25, 60);
+    sliderLpfDepth.setBounds(550, 115, 25, 60);
+    knobLpCutoff.setBounds(575, 120, 25, 25);
+    knobLpReso.setBounds(575, 145, 25, 25);
     
-    //LPF Env
-    sliderLpfEnvAtk.setBounds(425, 210, 25, 60);
-    sliderLpfEnvHold.setBounds(450, 210, 25, 60);
-    sliderLpfEnvDec.setBounds(475, 210, 25, 60);
-    sliderLpfEnvSus.setBounds(500, 210, 25, 60);
-    sliderLpfEnvRel.setBounds(525, 210, 25, 60);
-    sliderLpfDepth.setBounds(550, 210, 25, 60);
-    knobLpCutoff.setBounds(575, 215, 25, 25);
-    knobLpReso.setBounds(575, 240, 25, 25);
+    //HPF Env
+    sliderHpfEnvAtk.setBounds(425, 210, 25, 60);
+    sliderHpfEnvHold.setBounds(450, 210, 25, 60);
+    sliderHpfEnvDec.setBounds(475, 210, 25, 60);
+    sliderHpfEnvSus.setBounds(500, 210, 25, 60);
+    sliderHpfEnvRel.setBounds(525, 210, 25, 60);
+    sliderHpfDepth.setBounds(550, 210, 25, 60);
+    knobHpCutoff.setBounds(575, 215, 25, 25);
+    knobHpReso.setBounds(575, 240, 25, 25);
     
     
     //ShimmerVerb
