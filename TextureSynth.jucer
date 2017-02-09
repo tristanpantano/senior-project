@@ -9,7 +9,7 @@
               pluginWantsMidiIn="1" pluginProducesMidiOut="0" pluginIsMidiEffectPlugin="0"
               pluginEditorRequiresKeys="0" pluginAUExportPrefix="TextureSynthAU"
               pluginRTASCategory="" aaxIdentifier="com.yourcompany.TextureSynth"
-              pluginAAXCategory="AAX_ePlugInCategory_Dynamics" jucerVersion="4.2.4"
+              pluginAAXCategory="AAX_ePlugInCategory_Dynamics" jucerVersion="4.3.1"
               companyName="Tristan Pantano">
   <MAINGROUP id="xfhFvq" name="TextureSynth">
     <GROUP id="{84ADEABB-588F-5449-50DD-F3CB8BE5CCB1}" name="Source">

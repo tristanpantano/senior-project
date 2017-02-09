@@ -24,6 +24,16 @@ const int TextureSynthAudioProcessor::NUMVERBPARAMS = 4;
 
 //==============================================================================
 TextureSynthAudioProcessor::TextureSynthAudioProcessor() : mFileReader(nullptr), fileAddress(""), thumbnailCache(5), thumbnail(512, mFormatManager, thumbnailCache)
+#ifndef JucePlugin_PreferredChannelConfigurations
+:  AudioProcessor (BusesProperties()
+#if ! JucePlugin_IsMidiEffect
+#if ! JucePlugin_IsSynth
+                   .withInput  ("Input",  AudioChannelSet::stereo(), true)
+#endif
+                   .withOutput ("Output", AudioChannelSet::stereo(), true)
+#endif
+                   ),
+#endif
 {
     mFormatManager.registerBasicFormats();
     
